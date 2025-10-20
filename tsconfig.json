@@ -11,6 +11,6 @@
     "skipLibCheck": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts"], // <— include tests for editor/type-check
-  "exclude": ["node_modules", "dist"] // <— don’t exclude tests here
+  "include": ["src/**/*.ts", "tests/**/*.ts"], // <— include tests for type checking
+  "exclude": ["node_modules", "dist"] // <— don’t exclude tests here 
 }
