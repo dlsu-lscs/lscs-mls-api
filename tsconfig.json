@@ -12,5 +12,5 @@
     "resolveJsonModule": true
   },
   "include": ["src/**/*.ts", "tests/**/*.ts"], // <— include tests for type checking
-  "exclude": ["node_modules", "dist"] // <— don’t exclude tests here 
+  "exclude": ["node_modules", "dist"] // <— don’t exclude tests here
 }

@@ -1,8 +1,8 @@
 name: CI — api setup (lint, format-check, build, tests)
 
 on:
-  pull_request: { branches: ["main"] }
-  push:         { branches: ["main"] }
+  pull_request: { branches: ['main'] }
+  push: { branches: ['main'] }
   workflow_dispatch: {}
 
 permissions:
@@ -18,14 +18,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 'lts/*', cache: npm }   # <-- Setup environment (Node)
+        with: { node-version: 'lts/*', cache: npm } # <-- Setup environment (Node)
       - name: Install deps
         run: npm ci
       - name: Lint (eslint)
-        run: npm run lint                              # <-- Run lint
+        run: npm run lint # <-- Run lint
       - name: Format check (prettier --check)
-        run: npm run format:check                      # <-- Run format
+        run: npm run format:check # <-- Run format
       - name: Build (tsc)
         run: npm run build
       - name: Test (Vitest)
-        run: npm test -- --run --reporter=dot          # <-- Run tests pacheck if tama
+        run: npm test
