@@ -18,6 +18,7 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "winston": "^3.18.3"
   },
