@@ -1,0 +1,4 @@
+﻿{
+  "extends": "./tsconfig.json",
+  "exclude": ["node_modules", "dist", "tests"] // pacheck if tama
+}
