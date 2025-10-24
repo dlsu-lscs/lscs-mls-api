@@ -1,0 +1,18 @@
+# Git
+.git
+.gitignore
+
+# Node
+node_modules
+
+# Build output
+dist
+
+# IDE
+.vscode
+
+# Tests
+tests
+
+# Logs
+*.log
