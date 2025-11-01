@@ -58,10 +58,10 @@ export async function updateUser(id: number, data: UpdateUser): Promise<User | n
         [data, id]
     );
 
-    if (result.affectedRows > 0) {
-        return getUserById(id);
+    if (result.affectedRows == 0) {
+        return null;
     }
-    return null;
+    return getUserById(id);
 }
 
 export async function updateUserIdNumber(id: number, idNumber: number): Promise<number | null> {
@@ -72,10 +72,10 @@ export async function updateUserIdNumber(id: number, idNumber: number): Promise<
         [idNumber, id]
     );
 
-    if (result.affectedRows > 0) {
-        return idNumber;
+    if (result.affectedRows == 0) {
+        return null;
     }
-    return null;
+    return idNumber;
 }
 
 export async function deleteUser(id: number): Promise<boolean> {
