@@ -58,7 +58,7 @@ export async function updateUser(id: number, data: UpdateUser): Promise<User | n
         [data, id]
     );
 
-    if (result.affectedRows == 0) {
+    if (result.affectedRows === 0) {
         return null;
     }
     return getUserById(id);
@@ -72,7 +72,7 @@ export async function updateUserIdNumber(id: number, idNumber: number): Promise<
         [idNumber, id]
     );
 
-    if (result.affectedRows == 0) {
+    if (result.affectedRows === 0) {
         return null;
     }
     return idNumber;
