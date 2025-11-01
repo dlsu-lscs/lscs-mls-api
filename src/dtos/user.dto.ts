@@ -1,6 +1,6 @@
 export interface User {
     id: number,
-    idNumber: number,
+    idNumber?: number,
     email: string,
     givenName: string,
     familyName: string,
@@ -9,7 +9,7 @@ export interface User {
 }
 
 export interface User {
-    idNumber: number,
+    idNumber?: number,
     email: string,
     givenName: string,
     familyName: string,
