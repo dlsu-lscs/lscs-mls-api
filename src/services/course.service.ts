@@ -75,8 +75,8 @@ export async function createCourse(
 
 export async function getCourseById(id: number): Promise<any[] | null> {
     const [rows] = await pool.query<RowDataPacket[]>(
-        `SELECT * FROM course c
-        LEFT JOIN course_enrollment ce ON c.id = cd.course_id
+        `SELECT * FROM courses c
+        LEFT JOIN course_enrollments ce ON c.id = cd.course_id
         LEFT JOIN course_timeslots ct ON c.id = ct.course_id
         WHERE id = ?`,
         [id]
@@ -89,9 +89,20 @@ export async function getAllCoursesByCourseName(name: string, params?: object): 
     // ADD FILTERS AND SORT(?)
 
     const [rows] = await pool.query<RowDataPacket[]>(
-        `SELECT * FROM course c
-        LEFT JOIN course_enrollment ce ON c.id = cd.course_id
+        `SELECT * FROM courses c
+        LEFT JOIN course_enrollments ce ON c.id = cd.course_id
         LEFT JOIN course_timeslots ct ON c.id = ct.course_id
+        WHERE course_name = ?`,
+        [name]
+    );
+
+    return rows as any[];
+}
+
+export async function getInstructorsByCourseName(name: string): Promise<any[]> {
+    const [rows] = await pool.query<RowDataPacket[]>(
+        `SELECT DISTINCT instructor FROM course_timeslots ct
+        JOIN courses c ON ct.course_id = c.id
         WHERE course_name = ?`,
         [name]
     );
