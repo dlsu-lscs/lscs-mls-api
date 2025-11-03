@@ -11,6 +11,5 @@ export interface CreateCourseTimeslot {
     day: string,
     time: string,
     room?: string,
-    instructor?: string,
-    courseId: number
+    instructor?: string
 }

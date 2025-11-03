@@ -9,6 +9,5 @@ export interface CourseEnrollment {
 export interface CreateCourseEnrollment {
     enrollCap?: number,
     enrolled?: number,
-    status?: 'closed' | 'open', 
-    courseId: number
+    status?: 'closed' | 'open'
 }

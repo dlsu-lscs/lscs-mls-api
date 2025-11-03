@@ -51,11 +51,26 @@ export async function getUserByUserId(userId: number): Promise<User | null> {
 }
 
 export async function updateUser(id: number, data: UpdateUser): Promise<User | null> {
+    const existingUser = await getUserById(id);
+    if (!existingUser) {
+        return null;
+    }
+
+    const {
+        givenName = existingUser.givenName,
+        familyName = existingUser.familyName,
+        pictureUrl = existingUser.pictureUrl
+    } = data;
+
     const [result] = await pool.query<ResultSetHeader>(
         `UPDATE users
-        SET ?
-        WHERE id = ?`,
-        [data, id]
+        SET given_name = ?, family_name = ?, picture_url = ?
+        WHERE id = ?`, [
+            givenName,
+            familyName,
+            pictureUrl, 
+            id
+        ]
     );
 
     if (result.affectedRows === 0) {
