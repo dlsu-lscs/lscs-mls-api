@@ -4,6 +4,7 @@ import { Course, CreateCourse } from 'dtos/course.dto.js';
 import { CourseEnrollment, CreateCourseEnrollment } from 'dtos/course-enrollment.dto.js';
 import { CourseTimeslot, CreateCourseTimeslot } from 'dtos/course-timeslot.dto.js';
 
+// MIGHT REFACTOR
 export async function createCourse(
     courseData: CreateCourse,
     enrollmentData: CreateCourseEnrollment,
@@ -99,16 +100,16 @@ export async function getAllCoursesByCourseName(name: string, params?: object): 
     return rows as any[];
 }
 
-export async function getInstructorsByCourseName(name: string): Promise<any[]> {
-    const [rows] = await pool.query<RowDataPacket[]>(
-        `SELECT DISTINCT instructor FROM course_timeslots ct
-        JOIN courses c ON ct.course_id = c.id
-        WHERE course_name = ?`,
-        [name]
-    );
+// export async function getInstructorsByCourseName(name: string): Promise<any[]> {
+//     const [rows] = await pool.query<RowDataPacket[]>(
+//         `SELECT DISTINCT instructor FROM course_timeslots ct
+//         JOIN courses c ON ct.course_id = c.id
+//         WHERE course_name = ?`,
+//         [name]
+//     );
 
-    return rows as any[];
-}
+//     return rows as any[];
+// }
 
 export async function deleteCourse(id: number): Promise<boolean> {
     const [result] = await pool.query<ResultSetHeader>(
@@ -120,6 +121,7 @@ export async function deleteCourse(id: number): Promise<boolean> {
     return result.affectedRows > 0;
 }
 
+// IDK BOUT THIS
 export async function deleteCourseByCourseName(name: string): Promise<boolean> {
     const [result] = await pool.query<ResultSetHeader>(
         `DELETE FROM courses
