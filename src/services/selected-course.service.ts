@@ -1,8 +1,7 @@
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import pool from 'config/db.js';
 import { SelectedCourse, CreateSelectedCourse } from 'dtos/selected-course.dto.js';
-import { getCourseById } from 'services/course.service.js'
-import { error } from 'console';
+import { getCourseById } from 'services/course.service.js';
 
 export async function createSelectedCourse(data: CreateSelectedCourse): Promise<SelectedCourse | null> {
     const {
@@ -13,8 +12,8 @@ export async function createSelectedCourse(data: CreateSelectedCourse): Promise<
     const course = await getCourseById(courseId);
     
     if (course === null) {
-        // PROB REPLACE ALL ERRORS
-        throw error("Course doesn't exist.");
+        // PROB REPLACE ALL new ErrorS
+        throw new Error("Selected course doesn't exist.");
     }
     
     const userCourses = await getAllUserSelectedCourse(userId);
@@ -24,13 +23,13 @@ export async function createSelectedCourse(data: CreateSelectedCourse): Promise<
 
         for (const uc of userCourses) {
             if (uc.courseName === sc.courseName) {
-                throw error(`A class of course ${uc.courseName} is already selected.`);
+                throw new Error(`A class of course name ${uc.courseName} is already selected.`);
             }
             
             const [ucStart, ucEnd] = uc.courseName.split("-");
 
-            if (scStart < ucEnd || ucStart < scEnd) {
-                throw error(`Selected course conflicts with classes in schedule.`);
+            if ((scStart >= ucStart && scStart <= ucEnd) || (scEnd >= scStart && scEnd <= scEnd)) {
+                throw new Error(`Selected course conflicts with classes in schedule.`);
             }
         }
     }
@@ -43,9 +42,6 @@ export async function createSelectedCourse(data: CreateSelectedCourse): Promise<
         ]
     );
 
-    if (result.affectedRows === 0) {
-        return null;
-    }
     return { id: result.insertId, courseId, userId };
 }
 
