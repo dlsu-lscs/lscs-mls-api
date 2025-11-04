@@ -5,8 +5,6 @@ import { getCourseById } from 'services/course.service.js'
 import { error } from 'console';
 
 export async function createSelectedCourse(data: CreateSelectedCourse): Promise<SelectedCourse | null> {
-    // ADD VALIDATOR IF COURSE ALREADY EXISTS AMONG USER SELECTIONS
-
     const {
         courseId,
         userId
