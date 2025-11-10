@@ -50,18 +50,19 @@ export async function getAllUserSelectedCourse(id: number): Promise<any[]> {
         `SELECT * FROM selected_courses sc
         JOIN courses c ON sc.course_id = c.id
         JOIN course_timeslots ct ON c.id = ct.course_id 
-        WHERE id = ?`,
+        WHERE user_id = ?`,
         [id]
     );
 
     return rows as any[];
 }
 
-export async function deleteSelectedCourse(id: number): Promise<boolean> {
+export async function deleteSelectedCourse(userId: number, courseId: number): Promise<boolean> {
     const [result] = await pool.query<ResultSetHeader>(
         `DELETE FROM selected_courses
-        WHERE id = ?`,
-        [id]
+        WHERE user_id = ?
+        AND course_id = ?`,
+        [userId, courseId]
     );
 
     return result.affectedRows > 0;

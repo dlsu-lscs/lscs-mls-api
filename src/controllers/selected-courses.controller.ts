@@ -38,12 +38,13 @@ export async function getAllUserSelectedCourse(req: Request, res: Response) {
 
 export async function deleteSelectedCourse(req: Request, res: Response) {
     try {
-        const id = Number(req.params.id);
-        if (isNaN(id)) {
-            return res.status(400).json({ message: 'Invalid user ID.' });
+        const userId = Number(req.params.userId);
+        const courseId = Number(req.params.courseId);
+        if (isNaN(userId) || isNaN(courseId)) {
+            return res.status(400).json({ message: 'Invalid user/course ID.' });
         }
 
-        const success = await SelectedCourseService.deleteSelectedCourse(id);
+        const success = await SelectedCourseService.deleteSelectedCourse(userId, courseId);
 
         if (!success) {
             return res.status(404).json({ message: 'Course not found.' });

@@ -4,6 +4,9 @@ import * as UserService from 'services/user.service.js';
 export async function createUser(req: Request, res: Response) {
     try {
         const user = await UserService.createUser(req.body);
+        if (!user) {
+            return res.status(409).json({ message: 'User already exists.' });
+        }
         res.status(201).json(user);
     } catch (err) {
         console.log(err);
@@ -61,6 +64,26 @@ export async function updateUser(req: Request, res: Response) {
     } catch (err) {
         console.log(err);
         res.status(500).json({ message: 'Error updating user.', error: err });
+    }
+}
+
+export async function updateUserIdNumber(req: Request, res: Response) {
+    try {
+        const id = Number(req.params.id);
+        const idNumber = Number(req.body.idNumber);
+        if (isNaN(id) || isNaN(idNumber)) {
+            return res.status(400).json({ message: 'Invalid id.' });
+        }
+
+        const success = await UserService.updateUserIdNumber(id, idNumber);
+
+        if (!success) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+        res.status(200).json({ idNumber: idNumber })
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ message: 'Error updating user ID number.', error: err });
     }
 }
 

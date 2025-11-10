@@ -11,6 +11,12 @@ export async function createUser(data: CreateUser): Promise<User | null> {
         pictureUrl
     } = data;
 
+    const existingUser = await getUserByUserId(userId);
+
+    if (existingUser) {
+        return null;
+    }
+    
     const [result] = await pool.query<ResultSetHeader>(
         `INSERT INTO users (email, given_name, family_name, user_id, picture_url)
         VALUES (? ? ? ? ?)`, [
@@ -40,7 +46,7 @@ export async function getUserById(id: number): Promise<User | null> {
     return rows[0] as User | null;
 }
 
-export async function getUserByUserId(userId: number): Promise<User | null> {
+export async function getUserByUserId(userId: string): Promise<User | null> {
     const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT * FROM users
         WHERE user_id = ?`, 

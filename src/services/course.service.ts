@@ -100,16 +100,16 @@ export async function getAllCoursesByCourseName(name: string, params?: object): 
     return rows as any[];
 }
 
-// export async function getInstructorsByCourseName(name: string): Promise<any[]> {
-//     const [rows] = await pool.query<RowDataPacket[]>(
-//         `SELECT DISTINCT instructor FROM course_timeslots ct
-//         JOIN courses c ON ct.course_id = c.id
-//         WHERE course_name = ?`,
-//         [name]
-//     );
+export async function getInstructorsByCourseName(name: string): Promise<any[]> {
+    const [rows] = await pool.query<RowDataPacket[]>(
+        `SELECT DISTINCT instructor FROM course_timeslots ct
+        JOIN courses c ON ct.course_id = c.id
+        WHERE course_name = ?`,
+        [name]
+    );
 
-//     return rows as any[];
-// }
+    return rows as any[];
+}
 
 export async function deleteCourse(id: number): Promise<boolean> {
     const [result] = await pool.query<ResultSetHeader>(
