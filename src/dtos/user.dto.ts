@@ -1,20 +1,20 @@
 export interface User {
     id: number,
     idNumber?: number,
-    email: string,
-    givenName: string,
-    familyName: string,
+    email?: string,
+    givenName?: string,
+    familyName?: string,
     userId: string
-    pictureUrl: string
+    pictureUrl?: string
 }
 
 export interface CreateUser {
     idNumber?: number,
-    email: string,
-    givenName: string,
-    familyName: string,
+    email?: string,
+    givenName?: string,
+    familyName?: string,
     userId: string
-    pictureUrl: string
+    pictureUrl?: string
 }
 
 export interface UpdateUser {
