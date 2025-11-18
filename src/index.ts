@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 
 import userRouter from 'routes/user.routes.js';
 import courseRouter from 'routes/course.routes.js';
-import authRouter from 'routes/auth.routes.js'
+import authRouter from 'routes/auth.routes.js';
 
 dotenv.config();
 const app = express();
