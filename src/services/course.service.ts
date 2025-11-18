@@ -19,7 +19,7 @@ export async function createCourse(
 
     const [resultCourse] = await pool.query<ResultSetHeader>(
         `INSERT INTO courses (class_number, course_name, section, remarks)
-        VALUES (? ? ? ?)`, [
+        VALUES (?, ?, ?, ?)`, [
             classNumber,
             courseName,
             section,
@@ -41,7 +41,7 @@ export async function createCourse(
 
     const [resultEnrollment] = await pool.query<ResultSetHeader>(
         `INSERT INTO course_enrollments (enroll_cap, enrolled, status, course_id)
-        VALUES (? ? ? ?)`, [
+        VALUES (?, ?, ?, ?)`, [
             enrollCap,
             enrolled,
             status,
@@ -61,7 +61,7 @@ export async function createCourse(
 
         resultTimeslots.push(await pool.query<ResultSetHeader>(
             `INSERT INTO course_timeslots (day, time, room, instructor, course_id)
-            VALUES (? ? ? ? ?)`, [
+            VALUES (?, ?, ?, ?, ?)`, [
                 day,
                 time,
                 room,

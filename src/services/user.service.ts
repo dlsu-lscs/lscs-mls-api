@@ -19,7 +19,7 @@ export async function createUser(data: CreateUser): Promise<User | null> {
     
     const [result] = await pool.query<ResultSetHeader>(
         `INSERT INTO users (email, given_name, family_name, user_id, picture_url)
-        VALUES (? ? ? ? ?)`, [
+        VALUES (?, ?, ?, ?, ?)`, [
             email,
             givenName,
             familyName,
