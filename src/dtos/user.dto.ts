@@ -9,7 +9,6 @@ export interface User {
 }
 
 export interface CreateUser {
-    idNumber?: number,
     email?: string,
     givenName?: string,
     familyName?: string,
