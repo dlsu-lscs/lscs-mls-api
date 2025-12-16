@@ -36,15 +36,13 @@ export async function createCourse(
     const {
         enrollCap,
         enrolled,
-        status
     } = enrollmentData;
 
     const [resultEnrollment] = await pool.query<ResultSetHeader>(
-        `INSERT INTO course_enrollments (enroll_cap, enrolled, status, course_id)
-        VALUES (?, ?, ?, ?)`, [
+        `INSERT INTO course_enrollments (enroll_cap, enrolled, course_id)
+        VALUES (?, ?, ?)`, [
             enrollCap,
             enrolled,
-            status,
             courseId
         ]
     );
