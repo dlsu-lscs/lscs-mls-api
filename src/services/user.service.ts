@@ -85,7 +85,7 @@ export async function updateUser(id: number, data: UpdateUser): Promise<User | n
     return getUserById(id);
 }
 
-export async function updateUserIdNumber(id: number, idNumber: number): Promise<number | null> {
+export async function updateUserIdNumber(id: number, idNumber: string): Promise<string | null> {
     const [result] = await pool.query<ResultSetHeader>(
         `UPDATE users
         SET id_number = ?

@@ -70,9 +70,9 @@ export async function updateUser(req: Request, res: Response) {
 export async function updateUserIdNumber(req: Request, res: Response) {
     try {
         const id = Number(req.params.id);
-        const idNumber = Number(req.body.idNumber);
-        if (isNaN(id) || isNaN(idNumber)) {
-            return res.status(400).json({ message: 'Invalid id.' });
+        const idNumber = req.body.idNumber;
+        if (isNaN(id) || !idNumber) {
+            return res.status(400).json({ message: 'Invalid id or idNumber.' });
         }
 
         const success = await UserService.updateUserIdNumber(id, idNumber);
