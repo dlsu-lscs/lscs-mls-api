@@ -12,3 +12,10 @@ export interface CreateCourse {
     section: string,
     remarks?: string
 }
+
+export interface UpdateCourse {
+    classNumber?: number,
+    courseName?: string,
+    section?: string,
+    remarks?: string
+}

@@ -1,10 +1,10 @@
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import pool from 'config/db.js';
-import { Course, CreateCourse } from 'dtos/course.dto.js';
-import { CourseEnrollment, CreateCourseEnrollment } from 'dtos/course-enrollment.dto.js';
-import { CourseTimeslot, CreateCourseTimeslot } from 'dtos/course-timeslot.dto.js';
+import { spawnSync } from 'child_process';
+import { Course, CreateCourse, UpdateCourse } from 'dtos/course.dto.js';
+import { CourseEnrollment, CreateCourseEnrollment, UpdateCourseEnrollment } from 'dtos/course-enrollment.dto.js';
+import { CourseTimeslot, CreateCourseTimeslot, UpdateCourseTimeslot } from 'dtos/course-timeslot.dto.js';
 
-// MIGHT REFACTOR
 export async function createCourse(
     courseData: CreateCourse,
     enrollmentData: CreateCourseEnrollment,
@@ -47,17 +47,15 @@ export async function createCourse(
         ]
     );
 
-    const resultTimeslots = [];
-
-    for (const t of timeslotData) {
+    timeslotData.forEach(async (curr: CreateCourseTimeslot) => {
         let {
             day,
             time,
             room,
             instructor
-        } = t;
+        } = curr;
 
-        resultTimeslots.push(await pool.query<ResultSetHeader>(
+        await pool.query<ResultSetHeader>(
             `INSERT INTO course_timeslots (day, time, room, instructor, course_id)
             VALUES (?, ?, ?, ?, ?)`, [
                 day,
@@ -66,10 +64,125 @@ export async function createCourse(
                 instructor,
                 courseId
             ]
-        ));
-    }
+        );
+    })
 
     return getCourseById(courseId);
+}
+
+async function updateCourse(
+    newCourseData: UpdateCourse,
+    newEnrollmentData: UpdateCourseEnrollment,
+    newTimeslotData: UpdateCourseTimeslot[]
+): Promise<any | null> {
+    const {
+        classNumber,
+        courseName,
+        section,
+        remarks
+    } = newCourseData;
+
+    const [resultCourse] = await pool.query<ResultSetHeader>(
+        `UPDATE courses
+        SET class_number = ?, course_name = ?, section = ?, remarks = ?
+        WHERE id = ?`, [
+            classNumber,
+            courseName,
+            section,
+            remarks
+        ]
+    );
+
+    if (resultCourse.affectedRows === 0) {
+        return null;
+    }
+
+    const courseId = resultCourse.insertId;
+
+    const {
+        enrollCap,
+        enrolled,
+    } = newEnrollmentData;
+
+    const [resultEnrollment] = await pool.query<ResultSetHeader>(
+        `UPDATE course_enrollments
+        SET enroll_cap = ?, enrolled = ?
+        WHERE course_id = ?`, [
+            enrollCap,
+            enrolled,
+            courseId
+        ]
+    );
+
+    newTimeslotData.forEach(async (curr: UpdateCourseTimeslot) => {
+        let {
+            day, 
+            time,
+            room,
+            instructor,
+        } = curr;
+
+        await pool.query<ResultSetHeader>(
+            `UPDATE course_timeslots
+            SET room = ?, instructor = ?
+            WHERE course_id = ? AND day = ? AND time = ?`, [
+                room,
+                instructor,
+                courseId,
+                day,
+                time
+            ]
+        );
+    })
+
+    return getCourseById(courseId);
+}
+
+// WILL ADD SCRAPING HERE
+export async function fetchCourses(id: string, course: string): Promise<any[]> {
+    let info;
+
+    const process = spawnSync('python3', ['../scripts/scraper.py', id, course], { encoding: 'utf-8' });
+
+    if (process.error) {
+        throw new Error('Error parsing: ' + process.error.message);
+    }
+
+    let [courses, timeslots, enrollments] = JSON.parse(process.stdout.trim());
+    const currCourses = await getAllCoursesByCourseName(course);
+    const updatedCourses: any[] = []
+
+    courses.forEach(async (curr: any) => {
+        const index = courses['course_id'];
+        
+        if (!currCourses.some(c => c.class_number === curr['classNumber'])) {
+            updatedCourses.push(
+                await createCourse(
+                    courses[index], 
+                    enrollments[index], 
+                    timeslots.filter((ts: any) => ts['course_id'] === courses[index]['course_id'])
+                )
+            );
+        } else {
+            updatedCourses.push(
+                await updateCourse(
+                    courses[index], 
+                    enrollments[index], 
+                    timeslots.filter((ts: any) => ts['course_id'] === courses[index]['course_id'])
+                )
+            );
+        }
+    })
+    
+    return updatedCourses.filter(c => c !== null);
+
+    // FIX REDUNDANCY???
+    // check if course exists in the db
+        // if yes, create for each
+        // else, check each class if exists in db
+            // if yes, update (CREATE updateCourse)
+            // else, create
+
 }
 
 export async function getCourseById(id: number): Promise<any[] | null> {
@@ -85,7 +198,7 @@ export async function getCourseById(id: number): Promise<any[] | null> {
 }
 
 export async function getAllCoursesByCourseName(name: string, params?: object): Promise<any[]> {
-    // ADD FILTERS AND SORT(?)
+    // ADD FILTERS AND SORT IN THE FUTURE
 
     const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT * FROM courses c

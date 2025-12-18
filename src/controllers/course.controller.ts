@@ -1,8 +1,32 @@
 import { Request, Response } from "express";
 import * as CourseService from 'services/course.service.js';
 
-export async function createCourse(req: Request, res: Response) {
-    // STAY TUNED
+export async function fetchCourses(req: Request, res: Response) {
+    try {
+        const id = req.body.idNumber;
+        if (!id) {
+            return res.status(401).json({ message: 'Please enter a valid ID number.' });
+        }
+
+        const course = req.body.courseName;
+        if (!course) {
+            return res.status(401).json({ message: 'Please enter a course name.' });
+        }
+
+        const courses = await CourseService.fetchCourses(id, course);
+
+        if (courses === null) {
+            return res.status(404).json({ message: 'Course/s not found.' });
+        }
+        return res.status(200).json(courses);
+    } catch (err: any) {
+        console.log(err);
+        if (err.message.includes("Error parsing")) {
+            res.status(400).json({ message: err.message });
+        } else {
+            res.status(500).json({ message: 'Error fetching courses.', error: err });
+        }
+    }
 }
 
 export async function getCourseById(req: Request, res: Response) {
@@ -15,7 +39,7 @@ export async function getCourseById(req: Request, res: Response) {
         const course = await CourseService.getCourseById(id);
 
         if (course === null) {
-            return res.status(404).json({ message: 'Course/s not found.' });
+            return res.status(404).json({ message: 'Course not found.' });
         }
         res.status(200).json(course);
     } catch (err) {

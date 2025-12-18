@@ -9,3 +9,8 @@ export interface CreateCourseEnrollment {
     enrollCap?: number,
     enrolled?: number,
 }
+
+export interface UpdateCourseEnrollment {
+    enrollCap?: number,
+    enrolled?: number,
+}

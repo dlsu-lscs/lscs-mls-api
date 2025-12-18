@@ -13,3 +13,10 @@ export interface CreateCourseTimeslot {
     room?: string,
     instructor?: string
 }
+
+export interface UpdateCourseTimeslot {
+    day?: string,
+    time?: string,
+    room?: string,
+    instructor?: string
+}
