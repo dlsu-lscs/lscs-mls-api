@@ -142,11 +142,12 @@ async function updateCourse(
 export async function fetchCourses(id: string, course: string): Promise<any[]> {
     let info;
 
-    const process = spawnSync('python3', ['../scripts/scraper.py', id, course], { encoding: 'utf-8' });
-
+    const process = spawnSync('python3', ['../lscs-mls-api/src/scripts/scraper.py', id, course], { encoding: 'utf-8' });
     if (process.error) {
         throw new Error('Error parsing: ' + process.error.message);
     }
+    
+    console.log(process);
 
     let [courses, timeslots, enrollments] = JSON.parse(process.stdout.trim());
     const currCourses = await getAllCoursesByCourseName(course);
@@ -202,7 +203,7 @@ export async function getAllCoursesByCourseName(name: string, params?: object): 
 
     const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT * FROM courses c
-        LEFT JOIN course_enrollments ce ON c.id = cd.course_id
+        LEFT JOIN course_enrollments ce ON c.id = ce.course_id
         LEFT JOIN course_timeslots ct ON c.id = ct.course_id
         WHERE course_name = ?`,
         [name]
