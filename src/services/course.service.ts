@@ -188,9 +188,9 @@ export async function fetchCourses(id: string, course: string): Promise<any[]> {
 export async function getCourseById(id: number): Promise<any[] | null> {
     const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT * FROM courses c
-        LEFT JOIN course_enrollments ce ON c.id = cd.course_id
+        LEFT JOIN course_enrollments ce ON c.id = ce.course_id
         LEFT JOIN course_timeslots ct ON c.id = ct.course_id
-        WHERE id = ?`,
+        WHERE c.id = ?`,
         [id]
     );
 
