@@ -14,6 +14,7 @@ export interface CreateCourse {
 }
 
 export interface UpdateCourse {
+    course_id: number,
     classNumber?: number,
     courseName?: string,
     section?: string,

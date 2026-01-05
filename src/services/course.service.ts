@@ -38,7 +38,7 @@ export async function createCourse(
         enrolled,
     } = enrollmentData;
 
-    const [resultEnrollment] = await pool.query<ResultSetHeader>(
+    await pool.query<ResultSetHeader>(
         `INSERT INTO course_enrollments (enroll_cap, enrolled, course_id)
         VALUES (?, ?, ?)`, [
             enrollCap,
@@ -76,6 +76,7 @@ async function updateCourse(
     newTimeslotData: UpdateCourseTimeslot[]
 ): Promise<any | null> {
     const {
+        course_id,
         classNumber,
         courseName,
         section,
@@ -89,7 +90,8 @@ async function updateCourse(
             classNumber,
             courseName,
             section,
-            remarks
+            remarks,
+            course_id
         ]
     );
 
@@ -97,20 +99,18 @@ async function updateCourse(
         return null;
     }
 
-    const courseId = resultCourse.insertId;
-
     const {
         enrollCap,
         enrolled,
     } = newEnrollmentData;
 
-    const [resultEnrollment] = await pool.query<ResultSetHeader>(
+    await pool.query<ResultSetHeader>(
         `UPDATE course_enrollments
         SET enroll_cap = ?, enrolled = ?
         WHERE course_id = ?`, [
             enrollCap,
             enrolled,
-            courseId
+            course_id
         ]
     );
 
@@ -128,20 +128,18 @@ async function updateCourse(
             WHERE course_id = ? AND day = ? AND time = ?`, [
                 room,
                 instructor,
-                courseId,
+                course_id,
                 day,
                 time
             ]
         );
     })
 
-    return getCourseById(courseId);
+    return getCourseById(course_id);
 }
 
 // WILL ADD SCRAPING HERE
 export async function fetchCourses(id: string, course: string): Promise<any[]> {
-    let info;
-
     const process = spawnSync('python3', ['../lscs-mls-api/src/scripts/scraper.py', id, course], { encoding: 'utf-8' });
     if (process.error) {
         throw new Error('Error parsing: ' + process.error.message);
@@ -153,7 +151,9 @@ export async function fetchCourses(id: string, course: string): Promise<any[]> {
     const updatedCourses: any[] = []
 
     courses.forEach(async (curr: any, index: number) => {
-        if (currCourses.some(c => c['classNumber'] === curr['classNumber'])) {
+        let classNumber = Number(curr['classNumber']);
+
+        if (currCourses.some(c => c['class_number'] === classNumber)) {
             updatedCourses.push(
                 await updateCourse(
                     curr,
@@ -172,11 +172,9 @@ export async function fetchCourses(id: string, course: string): Promise<any[]> {
         }
     })
     
-    return updatedCourses.filter(c => c !== null);
+    return updatedCourses;
 
-    // FIX ENROLLMENT PARSING
-    // FIX DUPLICATE COURSES WHEN UPDATING
-
+    // FIX DUPLICATE COURSES WHEN UPDATING 
 }
 
 export async function getCourseById(id: number): Promise<any[] | null> {
