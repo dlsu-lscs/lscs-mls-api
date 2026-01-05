@@ -146,30 +146,27 @@ export async function fetchCourses(id: string, course: string): Promise<any[]> {
     if (process.error) {
         throw new Error('Error parsing: ' + process.error.message);
     }
-    
-    console.log(process);
 
     let [courses, timeslots, enrollments] = JSON.parse(process.stdout.trim());
+
     const currCourses = await getAllCoursesByCourseName(course);
     const updatedCourses: any[] = []
 
-    courses.forEach(async (curr: any) => {
-        const index = courses['course_id'];
-        
-        if (!currCourses.some(c => c.class_number === curr['classNumber'])) {
+    courses.forEach(async (curr: any, index: number) => {
+        if (currCourses.some(c => c['classNumber'] === curr['classNumber'])) {
             updatedCourses.push(
-                await createCourse(
-                    courses[index], 
+                await updateCourse(
+                    curr,
                     enrollments[index], 
-                    timeslots.filter((ts: any) => ts['course_id'] === courses[index]['course_id'])
+                    timeslots.filter((ts: any) => ts['course_id'] === curr['course_id'])
                 )
             );
         } else {
             updatedCourses.push(
-                await updateCourse(
-                    courses[index], 
+                await createCourse(
+                    curr, 
                     enrollments[index], 
-                    timeslots.filter((ts: any) => ts['course_id'] === courses[index]['course_id'])
+                    timeslots.filter((ts: any) => ts['course_id'] === curr['course_id'])
                 )
             );
         }
@@ -177,12 +174,8 @@ export async function fetchCourses(id: string, course: string): Promise<any[]> {
     
     return updatedCourses.filter(c => c !== null);
 
-    // FIX REDUNDANCY???
-    // check if course exists in the db
-        // if yes, create for each
-        // else, check each class if exists in db
-            // if yes, update (CREATE updateCourse)
-            // else, create
+    // FIX ENROLLMENT PARSING
+    // FIX DUPLICATE COURSES WHEN UPDATING
 
 }
 
