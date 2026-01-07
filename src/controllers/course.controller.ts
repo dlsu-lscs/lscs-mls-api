@@ -5,17 +5,19 @@ export async function fetchCourses(req: Request, res: Response) {
     try {
         const id = req.body.idNumber;
         if (!id) {
-            return res.status(401).json({ message: 'Please enter a valid ID number.' });
+            return res.status(400).json({ message: 'Please enter a valid ID number.' });
         }
 
         const course = req.body.courseName;
         if (!course) {
-            return res.status(401).json({ message: 'Please enter a course name.' });
+            return res.status(400).json({ message: 'Please enter a course name.' });
         }
 
-        const courses = await CourseService.fetchCourses(id, course);
+        console.log("start fetching")
 
-        if (courses === null) {
+        const courses = await CourseService.fetchCourses(id, course.toUpperCase());
+
+        if (courses.length === 0) {
             return res.status(404).json({ message: 'Course/s not found.' });
         }
         return res.status(200).json(courses);
@@ -38,7 +40,7 @@ export async function getCourseById(req: Request, res: Response) {
 
         const course = await CourseService.getCourseById(id);
 
-        if (course === null) {
+        if (course?.length === 0) {
             return res.status(404).json({ message: 'Course not found.' });
         }
         res.status(200).json(course);
@@ -56,9 +58,9 @@ export async function getAllCoursesByCourseName(req: Request, res: Response) {
             return res.status(400).json({ message: "No course name was given." })
         }
 
-        const course = await CourseService.getAllCoursesByCourseName(name);
+        const course = await CourseService.getAllCoursesByCourseName(name.toUpperCase());
 
-        if (course === null) {
+        if (course.length === 0) {
             return res.status(404).json({ message: 'Course/s not found.' });
         }
         res.status(200).json(course);

@@ -4,12 +4,14 @@ import { spawnSync } from 'child_process';
 import { Course, CreateCourse, UpdateCourse } from 'dtos/course.dto.js';
 import { CourseEnrollment, CreateCourseEnrollment, UpdateCourseEnrollment } from 'dtos/course-enrollment.dto.js';
 import { CourseTimeslot, CreateCourseTimeslot, UpdateCourseTimeslot } from 'dtos/course-timeslot.dto.js';
+import { get } from 'http';
+import { exists } from 'fs';
 
 export async function createCourse(
     courseData: CreateCourse,
     enrollmentData: CreateCourseEnrollment,
     timeslotData: CreateCourseTimeslot[]
-): Promise<any | null> {
+): Promise<number | null> {
     const {
         classNumber,
         courseName,
@@ -27,9 +29,7 @@ export async function createCourse(
         ]
     );
 
-    if (resultCourse.affectedRows === 0) {
-        return null;
-    }
+    await console.log("C1st " + resultCourse.affectedRows)
 
     const courseId = resultCourse.insertId;
 
@@ -46,6 +46,8 @@ export async function createCourse(
             courseId
         ]
     );
+
+    await console.log("C2nd")
 
     timeslotData.forEach(async (curr: CreateCourseTimeslot) => {
         let {
@@ -67,16 +69,18 @@ export async function createCourse(
         );
     })
 
-    return getCourseById(courseId);
+    await console.log("C3rd")
+
+    return courseId
 }
 
 async function updateCourse(
+    courseId: number,
     newCourseData: UpdateCourse,
     newEnrollmentData: UpdateCourseEnrollment,
     newTimeslotData: UpdateCourseTimeslot[]
-): Promise<any | null> {
+): Promise<void> {
     const {
-        course_id,
         classNumber,
         courseName,
         section,
@@ -91,13 +95,11 @@ async function updateCourse(
             courseName,
             section,
             remarks,
-            course_id
+            courseId
         ]
     );
 
-    if (resultCourse.affectedRows === 0) {
-        return null;
-    }
+    await console.log("U1st " + resultCourse.affectedRows)
 
     const {
         enrollCap,
@@ -110,9 +112,11 @@ async function updateCourse(
         WHERE course_id = ?`, [
             enrollCap,
             enrolled,
-            course_id
+            courseId
         ]
     );
+
+    await console.log("U2nd")
 
     newTimeslotData.forEach(async (curr: UpdateCourseTimeslot) => {
         let {
@@ -128,55 +132,100 @@ async function updateCourse(
             WHERE course_id = ? AND day = ? AND time = ?`, [
                 room,
                 instructor,
-                course_id,
+                courseId,
                 day,
                 time
             ]
         );
     })
 
-    return getCourseById(course_id);
+    await console.log("U3rd");
 }
 
 // WILL ADD SCRAPING HERE
 export async function fetchCourses(id: string, course: string): Promise<any[]> {
+    // Runs the python script
     const process = spawnSync('python3', ['../lscs-mls-api/src/scripts/scraper.py', id, course], { encoding: 'utf-8' });
+    
     if (process.error) {
         throw new Error('Error parsing: ' + process.error.message);
     }
 
+    // Parses the output from the script
     let [courses, timeslots, enrollments] = JSON.parse(process.stdout.trim());
 
-    const currCourses = await getAllCoursesByCourseName(course);
-    const updatedCourses: any[] = []
+    // Fetches existing courses from DB (for comparison)
+    const existingCourses = await getAllCoursesByCourseName(course);
 
-    courses.forEach(async (curr: any, index: number) => {
+    await console.log("Fetched courses from DB");
+
+    // Set to track processed class numbers
+    const processedClassNumbers = new Set<number>();
+
+    // Main iteration for adding/updating courses
+    const updatePromises = courses.map(async (curr: any, index: number) => {
+        console.log(curr);
+
         let classNumber = Number(curr['classNumber']);
+        processedClassNumbers.add(classNumber);
+        
+        // Checks if this class number exists in our DB fetch
+        const existingClassNumberCourses = existingCourses.filter((c: any) => c['class_number'] === classNumber);
 
-        if (currCourses.some(c => c['class_number'] === classNumber)) {
-            updatedCourses.push(
-                await updateCourse(
-                    curr,
-                    enrollments[index], 
-                    timeslots.filter((ts: any) => ts['course_id'] === curr['course_id'])
-                )
+        const currentEnrollment = enrollments[index];
+        const currentTimeslots = timeslots.filter((ts: any) => ts['course_id'] === curr['course_id']);
+
+        let courseId;
+
+        if (existingClassNumberCourses.length > 0) {
+            courseId = existingClassNumberCourses[0]['course_id'];
+
+            await updateCourse(
+                courseId,
+                curr,
+                currentEnrollment, 
+                currentTimeslots
             );
         } else {
-            updatedCourses.push(
-                await createCourse(
-                    curr, 
-                    enrollments[index], 
-                    timeslots.filter((ts: any) => ts['course_id'] === curr['course_id'])
-                )
-            );
+            courseId = await createCourse(
+                curr, 
+                currentEnrollment, 
+                currentTimeslots
+            ); 
         }
-    })
-    
-    return updatedCourses;
 
-    // FIX DUPLICATE COURSES WHEN UPDATING 
+        console.log(courseId)
+
+        const fetchedCourse = {
+            class_number: courseId,
+            enrollment: currentEnrollment,
+            timeslots: currentTimeslots
+        }
+
+        // NOTE: For now, ignore the course_id found in the enrollment and timeslots of fetchedCourse
+
+        return fetchedCourse;
+    });
+
+    // Waits for all updates/creates to finish in parallel
+    let newCourses = await Promise.all(updatePromises);
+
+    // Filters out courses that were not processed (i.e., removed courses)
+    const coursesToDelete = existingCourses.filter((c: any) => !processedClassNumbers.has(c['class_number']));
+
+    // Deletes courses that were not present in the latest fetch
+    for (const curr of coursesToDelete) {
+        console.log(curr)
+        await deleteCourse(curr['id']);
+        console.log(`Course with class number ${curr['class_number']} has been removed.`);
+    }
+    
+    await console.log(`Courses fetched for course name: ${course}`);
+
+    return newCourses;
 }
 
+// FIX?
 export async function getCourseById(id: number): Promise<any[] | null> {
     const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT * FROM courses c
@@ -189,7 +238,7 @@ export async function getCourseById(id: number): Promise<any[] | null> {
     return rows as any[] | null;
 }
 
-export async function getAllCoursesByCourseName(name: string, params?: object): Promise<any[]> {
+export async function getAllCoursesByCourseName(name: string): Promise<any[]> {
     // ADD FILTERS AND SORT IN THE FUTURE
 
     const [rows] = await pool.query<RowDataPacket[]>(
@@ -199,6 +248,8 @@ export async function getAllCoursesByCourseName(name: string, params?: object): 
         WHERE course_name = ?`,
         [name]
     );
+
+    await console.log("ROWS fetched");
 
     return rows as any[];
 }
@@ -219,7 +270,7 @@ export async function deleteCourse(id: number): Promise<boolean> {
         `DELETE FROM courses
         WHERE id = ?`,
         [id]
-    );
+    ); 
 
     return result.affectedRows > 0;
 }
