@@ -1,3 +1,5 @@
+# PARSES DATA FROM MLS COURSE OFFERINGS
+
 from bs4 import BeautifulSoup
 import requests 
 import json
