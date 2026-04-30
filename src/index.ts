@@ -1,6 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
-
+import cors from 'cors';
 import userRouter from 'routes/user.routes.js';
 import courseRouter from 'routes/course.routes.js';
 import authRouter from 'routes/auth.routes.js';
@@ -12,6 +12,10 @@ const host = process.env.DB_HOST || 'localhost:';
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use(cors({
+  origin: "http://localhost:3001"
+}));
 
 app.use('/users', userRouter);
 app.use('/courses', courseRouter);
