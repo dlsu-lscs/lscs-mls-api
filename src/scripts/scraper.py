@@ -85,3 +85,96 @@ while i < len(course_list):
 
     i += 25
 
+#####################################################################################################################################################################################################
+
+# Gets dates for the schedule
+basis_date = datetime.strptime(class_schedules[0]['TIME_TABLE_DATE'], "%Y-%m-%d").date()
+basis_day = basis_date.weekday()
+days_of_week = ['M', 'T', 'W', 'H', 'F', 'S', 'U']
+week = { str(basis_date + timedelta(days = i - basis_day)): days_of_week[i] for i in range(7) }
+
+# Finds schedules that fit within the week
+week_schedules = list(filter(lambda item: item['TIME_TABLE_DATE'] in week.keys(), class_schedules))
+
+courses = []
+course_enrollments = []
+course_timeslots = []
+course_dict = {}
+i = 0
+
+# Parses main course info and course enrollment info
+for item in classes:
+    course_id = len(courses) + 1
+
+    course_code = item["SUBJECT_NAME"].split(' - ')[0]
+    course_dict_key = course_code + " - " + item["SECTION_NAME"]
+    course_dict[course_dict_key] = course_id
+
+    courses.append({
+        "course_id": course_id,
+        "courseName": item["SUBJECT_NAME"],
+        "section": item["SECTION_NAME"],
+        "term": current_term_name
+    })
+
+    course_enrollments.append({
+        "course_id": course_id,
+        "enrollCap": item["CAPACITY"],
+        "enrolled": item["ENLISTED"]
+    })
+
+class_sessions = { item: 0 for item in course_dict.keys() }
+class_online_sessions = class_sessions.copy()
+
+# Parses course schedules
+for item in week_schedules:
+    item_classes = list(set(item["COURSE_NAME"].split(" <br/> ")))
+
+    for item_class in item_classes:
+        class_info = list(map(lambda x: x.split(":")[-1].strip(), item_class.split("</span><span>")))
+
+        class_section = class_info[5]
+        class_start = datetime.strptime(item["TIME_FROM"], "%I:%M %p").strftime("%H:%M")
+        class_end = datetime.strptime(item["TIME_TO"], "%I:%M %p").strftime("%H:%M")
+        class_room = class_info[2]
+        class_instructor = class_info[3]
+
+        course_dict_key = item["COURSE_CODE"] + " - " + class_section
+
+        class_course_id = course_dict.get(course_dict_key)
+        class_day = week.get(item["TIME_TABLE_DATE"])
+        class_time = class_start + " - " + class_end
+
+        course_timeslots.append({
+            "course_id": class_course_id,
+            "day": class_day,
+            "time": class_time,
+            "room": class_room,
+            "instructor": class_instructor
+        })
+
+        class_sessions[course_dict_key] += 1
+
+        if class_room == "Online" or class_room == "-":
+            class_online_sessions[course_dict_key] += 1
+
+for item in class_online_sessions.keys():
+    course, section = item.split(' - ')
+
+    sessions = class_sessions[item]
+    online_sessions = class_online_sessions[item]
+
+    match online_sessions:
+        case 0:
+            modality = "Predominantly In-Person"
+        case _ if online_sessions == sessions:
+            modality = "Full Online"
+        case _:
+            modality = "Hybrid"
+
+    course_idx = next((idx for idx, item in enumerate(courses) if course in item["courseName"] and item["section"] == section), -1)
+    courses[course_idx]["modality"] = modality
+
+# Combines all parsed information into a single JSON object
+info = [courses, course_timeslots, course_enrollments]
+print(json.dumps(info, indent=4))
