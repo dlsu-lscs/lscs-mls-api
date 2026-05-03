@@ -1,141 +1,87 @@
-# PARSES DATA FROM MLS COURSE OFFERINGS
-
-from bs4 import BeautifulSoup
-import requests 
+import requests
 import json
+from datetime import timedelta, datetime
 import sys
 
-# Parses main course information
-def parse_course(data, course_id):
-    course_keys = ["classNumber", "courseName", "section", "remarks"]
-    item = {}
-    item["course_id"] = course_id
-    
-    for index, value in enumerate(course_keys):
-        item[value] = data[index]
-    
-    return item
+# URL FOR TERM/CAMPUS SELECTION, COURSE LIST, AND CLASS LIST
+url = "https://archershub.dlsu.edu.ph/CourseFinder/GetAllDropDownList"
+url2 = "https://archershub.dlsu.edu.ph/CourseFinder/GetCourseList/"
+url3 = "https://archershub.dlsu.edu.ph/CourseFinder/GetCFData/"
+url4 = "https://archershub.dlsu.edu.ph/CourseFinder/GetScheduleData/"
 
-# Parses course timeslot information
-def parse_timeslot(data, course_id):
-    timeslots_keys = ["day", "time", "room", "instructor"]
-    item = []
+session_id = sys.argv[1]
 
-    for i in data[0]:
-        slot = {}
-        slot["course_id"] = course_id
-
-        for index, value in enumerate(timeslots_keys):
-            if index == 0:
-                slot[value] = i
-            else:
-                slot[value] = data[index]
-        item.append(slot)
-
-    return item
-
-# Parses course enrollment information
-def parse_enrollment(data, course_id):
-    enrollments_keys = ["enrollCap", "enrolled"] 
-    item = {}
-    item["course_id"] = course_id
-    
-    for index, value in enumerate(enrollments_keys):
-        item[value] = data[index]
-    
-    return item
-
-i = 9               # Starting index in the scraped data
-course_ctr = 0      # Course counter
-
-courses = []
-course_enrollments = []
-course_timeslots = []
-
-curr_course = {}    # Placeholder for current course data
-
-URL = "https://enroll.dlsu.edu.ph/dlsu/view_course_offerings/view_course_offerings"
-id = sys.argv[1]        # Student ID of the user
-course = sys.argv[2]    # Course code to search for
-
-search_info = {
-    "p_id_no": id,
-    "p_button": "Search",
-    "p_course_code": course
+# GET COOKIES FROM AH
+cookies = {
+    "ASP.NET_SessionId": session_id,
 }
 
-page = requests.get(URL, params = search_info)
-soup = BeautifulSoup(page.content, features="html.parser")
+headers = {
+    'Accept': '*/*;',
+    'X-Requested-With': 'XMLHttpRequest',
+}
 
-if soup.find("p", class_="error"): 
-    sys.exit("Error: " + soup.find("p", class_="error").get_text().strip())
+r = requests.Session()
 
-scheds_info = soup.find_all("td", class_="data")
+# Fetches list of terms
+fetch_sessions = r.post(url, headers=headers, cookies=cookies)
+sessions = fetch_sessions.json()
+campuses = { item['CAMPUSNAME']: item['CAMPUSNO'] for item in sessions['CampusDrp'] }
+current_term = next(item for item in sessions['SessionDrp'] if item['IS_CURRENT_SESSION'] == True)
 
-while i < len(scheds_info) - 12:
-    text = scheds_info[i].get_text().strip()
+#####################################################################################################################################################################################################
 
-    # Skip empty entries
-    if not text:
-        i += 1
+current_term_name = current_term['ACADEMIC_SESSION_NAME']
+current_term_no = current_term['ACADEMIC_SESSION_ID']
 
-    # Check if the entry is a timeslot
-    elif not text.isnumeric():
-        # Day, time, room
-        timeslot = [scheds_info[j].get_text().strip() for j in range(i, i + 3)]
-        i += 3
+selected_campus = 'Manila'
 
-        # Skips to professor entry
-        while not scheds_info[i].get_text().strip():
-            i += 1
-        
-        # Professor (if given)
-        if (len(scheds_info[i].get_text().strip()) > 5):
-            timeslot.append(scheds_info[i].get_text().strip())
-            i += 1 
-        else:
-            timeslot.append("")
-        
-        timeslot.append(scheds_info[i].get_text().strip())
+payload = {
+    "Campusno": campuses.get(selected_campus),
+    "AcademicSession": current_term_no
+}
 
-        course_timeslots.extend(parse_timeslot(timeslot, course_ctr))
+# Fetches list of courses offered for the selected term
+fetch_courses = r.post(url2, json=payload, headers=headers, cookies=cookies)
+course_list = fetch_courses.json()['CourseDrp']
 
-    # Entry is a new course
-    else:
-        course_ctr += 1
+#####################################################################################################################################################################################################
 
-        # Class number, course name, section
-        course = [scheds_info[j].get_text().strip() for j in range(i, i + 3)]
-        i += 3
+classes = []
+class_schedules = []
 
-        # Day, time, room
-        timeslot = [scheds_info[j].get_text().strip() for j in range(i, i + 3)]
-        i += 3
+while i < len(course_list):
+    course_classes = []
+    k = i + 25 if i + 25 <= len(course_list) else len(course_list)
+    
+    for j in range(i, k):
+        payload["Courseid"] = course_list[j]["COURSE_CREATION_ID"]
 
-        # Enrollment cap, number of enrolled students
-        enrollment = [scheds_info[j].get_text().strip() for j in range(i, i + 2)]
-        i += 2
+        # Fetches offerings for selected course
+        fetch_classes = r.post(url3, json=payload, headers=headers, cookies=cookies)
+        course_classes.extend(fetch_classes.json())
+        classes.extend(course_classes)
 
-        # Remarks
-        course.append(scheds_info[i].get_text().strip())
-        i += 1
+    enlistmentSchedule = []
 
-        # Skips to professor entry
-        while not scheds_info[i].get_text().strip():
-            i += 1
-        
-        # Professor (if given)
-        if (len(scheds_info[i].get_text().strip()) > 5):
-            timeslot.append(scheds_info[i].get_text().strip())
-            i += 1
-        else:
-            timeslot.append("")
+    for item in course_classes:
+        enlistmentSchedule.append({
+            'COURSE_CREATION_ID': item['COURSE_CREATION_ID'],
+            'SECTION_CREATION_ID': item['SECTION_CREATION_ID'],
+            'BATCH_CREATION_ID': item['BATCH_CREATION_ID'],
+            'CAMPUSNO': payload['Campusno']
+        })
 
+    # Payload for fetching class schedules
+    payload_classes = {
+        'ACADEMICSESSIONID': payload['AcademicSession'],
+        'enlistmentSchedule': enlistmentSchedule
+    }
 
-        courses.append(parse_course(course, course_ctr))
-        course_enrollments.append(parse_enrollment(enrollment, course_ctr))
-        course_timeslots.extend(parse_timeslot(timeslot, course_ctr))
+    # Fetches class schedules per offering
+    fetch_class_schedules = r.post(url4, json=payload_classes, headers=headers, cookies=cookies)
+    course_class_schedules = fetch_class_schedules.json()
+    class_schedules.extend(course_class_schedules)
 
-# Combines all parsed information into a single JSON object
-info = [courses, course_timeslots, course_enrollments]
-print(json.dumps(info, indent=4))
+    i += 25
+
