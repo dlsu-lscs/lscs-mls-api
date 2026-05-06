@@ -1,0 +1,6 @@
+PORT=3000
+DB_HOST=localhost
+MONGO_URI=mongodb://localhost:27017/lscs_app
+JWT_SECRET=any-random-string-here
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
