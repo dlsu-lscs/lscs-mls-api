@@ -1,7 +1,10 @@
 import fs from 'fs';
-import puppeteer from 'puppeteer-extra';
+import vanillaPuppeteer from 'puppeteer';
+import { addExtra } from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { createWorker } from 'tesseract.js';
+
+const puppeteer = addExtra(vanillaPuppeteer as any);
 
 puppeteer.use(StealthPlugin());
 

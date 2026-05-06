@@ -1,8 +1,14 @@
 import fs from 'fs';
-import puppeteer from 'puppeteer-extra';
+// Import vanilla puppeteer and the addExtra wrapper
+import vanillaPuppeteer from 'puppeteer';
+import { addExtra } from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { spawnSync } from 'child_process';
 
+// Manually wrap it
+const puppeteer = addExtra(vanillaPuppeteer as any);
+
+// Now .use() and .launch() are guaranteed to be recognized
 puppeteer.use(StealthPlugin());
 
 export async function scraper(): Promise<any[] | null> {
