@@ -26,11 +26,17 @@ export async function scraper(): Promise<any[] | null> {
     return null;
   }
 
-  // Reads the saved cookies from ah-cookies.json
+  // Checks if ah-cookies.json is empty; if not, reads cookies
   const cookiesString: string = fs.readFileSync('./ah-cookies.json').toString();
+  if (cookiesString.trim() === "") {
+    console.log("No cookies found. Running login.");
+    await browser.close();
+    return null;
+  }
+  
   const cookies = JSON.parse(cookiesString);
 
-  // Checks if the secure SID exists
+  // Checks if the session id exists
   if (!cookies.find((item: any) => item.name === "ASP.NET_SessionId")) {
     console.log("Secure SID not found. Running login.");
     await browser.close();
@@ -43,7 +49,7 @@ export async function scraper(): Promise<any[] | null> {
   
   // Injects them into the browser before opening AH
   await browser.setCookie(...cookies);
-  console.log("Session cookies injected.");
+  console.log("ArchersHub Opened. Session cookies injected.");
   
   // Navigates to AH for instant log in (if cookies are still active).
   page.goto('https://archershub.dlsu.edu.ph/StudentDashboard', { 
@@ -52,7 +58,7 @@ export async function scraper(): Promise<any[] | null> {
   
   try {
     await page
-      .waitForSelector('#SPInsName', { timeout: 20000 })
+      .waitForSelector('#SPInsName', { timeout: 10000 })
       .then(() => console.log('Login successful. Fetching courses.'));
   } catch (e) {
     console.error("Cookies have expired. Running login.");
@@ -60,9 +66,9 @@ export async function scraper(): Promise<any[] | null> {
     return null;
   }
 
-  let secure_sid = cookiesObj["__Secure-SID"];
+  let sessionId = cookiesObj["ASP.NET_SessionId"];
 
-  const process = spawnSync('python3', ['./scraper.py', secure_sid], { encoding: 'utf-8' });
+  const process = spawnSync('python3', ['./scraper.py', sessionId], { encoding: 'utf-8' });
 
   if (process.error) {
     console.error('Error parsing: ' + process.error.message);
