@@ -5,10 +5,8 @@ import { addExtra } from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { spawnSync } from 'child_process';
 
-// Manually wrap it
 const puppeteer = addExtra(vanillaPuppeteer as any);
 
-// Now .use() and .launch() are guaranteed to be recognized
 puppeteer.use(StealthPlugin());
 
 export async function scraper(): Promise<any[] | null> {
@@ -33,7 +31,7 @@ export async function scraper(): Promise<any[] | null> {
   const cookies = JSON.parse(cookiesString);
 
   // Checks if the secure SID exists
-  if (!cookies.find((item: any) => item.name === "__Secure-SID")) {
+  if (!cookies.find((item: any) => item.name === "ASP.NET_SessionId")) {
     console.log("Secure SID not found. Running login.");
     await browser.close();
     return null;
