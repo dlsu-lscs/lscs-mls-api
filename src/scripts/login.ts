@@ -29,8 +29,8 @@ export async function login() {
     await page.waitForSelector('#btnSignIn', { visible: true });
     
     // Enters username and password
-    await page.type('#txtuserid', process.env.AH_USERNAME, { delay: 100 });
-    await page.type('#txtpassword', process.env.AH_PASSWORD, { delay: 100 });
+    await page.type('#txtuserid', process.env.AH_USERNAME as string, { delay: 100 });
+    await page.type('#txtpassword', process.env.AH_PASSWORD as string, { delay: 100 });
 
     // Identifies captcha image and performs OCR
     const element = await page.$('#CaptchaImageLogin');
