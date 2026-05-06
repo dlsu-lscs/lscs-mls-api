@@ -7,8 +7,8 @@ export async function email(): Promise<string | undefined> {
         port: 993,
         secure: true,
         auth: {
-            user: 'jan_leoric_b_aquino@dlsu.edu.ph',
-            pass: 'hsnk vmog fbfn hsje'
+            user: process.env.AH_GMAIL_ADDRESS as string,
+            pass: process.env.AH_GMAIL_PASSWORD
         },
         logger: false
     });
