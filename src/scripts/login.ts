@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { otpFetch } from './otp.js';
 import vanillaPuppeteer from 'puppeteer';
 import { addExtra } from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
@@ -42,10 +43,25 @@ export async function login() {
 
     // Enters captcha
     await page.type('#txtCaptchaTextLogin', captcha.data.text, { delay: 100 });
+
+    // Enters OTP
+    await page.waitForSelector('#btnTwoStepVerifyOTP', { visible: true, timeout: 10000 });
+    await new Promise(r => setTimeout(r, 5000)); 
+    console.log("Fetching OTP.");
+    const otp = await otpFetch();
+
+    if (!otp) {
+      throw new Error("OTP not fetched successfully.");
+    }
+
+    await page.type('#txtTwoStepOTP', otp, { delay: 100 });
+    await page.click('#btnTwoStepVerifyOTP');
+
+    await page.waitForSelector('#SPInsName', { visible: true, timeout: 15000 });
     
     console.log("Logging in to ArchersHub.");
 
-    await new Promise(r => setTimeout(r, 10000)); 
+    await new Promise(r => setTimeout(r, 5000)); 
     
     console.log("Logged in to ArchersHub. Extracting cookies.");
 

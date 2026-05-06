@@ -1,6 +1,6 @@
 import { ImapFlow } from "imapflow";
 
-export async function email(): Promise<string | undefined> {
+export async function otpFetch(): Promise<string | undefined> {
     let emailBody;
     const client = new ImapFlow({
         host: 'imap.gmail.com',
