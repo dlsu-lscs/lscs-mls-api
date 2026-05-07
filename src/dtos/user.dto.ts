@@ -1,6 +1,5 @@
 export interface User {
-    uid: number,
-    idNumber?: string,
+    id: number,
     email?: string,
     givenName?: string,
     familyName?: string,
@@ -20,4 +19,15 @@ export interface UpdateUser {
     givenName?: string,
     familyName?: string,
     pictureUrl?: string
+}
+
+export function mapToUserDTO(dbRow: any): User {
+    return {
+        id: dbRow.uid,
+        email: dbRow.email,
+        givenName: dbRow.given_name,
+        familyName: dbRow.family_name,
+        userId: dbRow.user_id,
+        pictureUrl: dbRow.picture_url
+    };
 }

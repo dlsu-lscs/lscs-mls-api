@@ -14,3 +14,12 @@ export interface UpdateCourseEnrollment {
     enrollCap?: number,
     enrolled?: number,
 }
+
+export function mapToCourseEnrollmentDTO(dbRow: any): CourseEnrollment {
+    return {
+        id: dbRow.eid,
+        enrollCap: dbRow.enroll_cap,
+        enrolled: dbRow.enrolled,
+        courseId: dbRow.course_id
+    };
+}

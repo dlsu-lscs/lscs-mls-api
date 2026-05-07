@@ -20,3 +20,14 @@ export interface UpdateCourseTimeslot {
     room?: string,
     instructor?: string
 }
+
+export function mapToCourseTimeslotDTO(dbRow: any): CourseTimeslot {
+    return {
+        id: dbRow.tid,
+        day: dbRow.day,
+        time: dbRow.time,
+        room: dbRow.room,
+        instructor: dbRow.instructor,
+        courseId: dbRow.course_id
+    };
+}

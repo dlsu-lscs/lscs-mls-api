@@ -12,7 +12,6 @@ export async function createSelectedCourse(data: CreateSelectedCourse): Promise<
     const course = await getCourseById(courseId);
     
     if (course === null) {
-        // PROB REPLACE ALL new ErrorS
         throw new Error("Selected course doesn't exist.");
     }
     
@@ -42,7 +41,11 @@ export async function createSelectedCourse(data: CreateSelectedCourse): Promise<
         ]
     );
 
-    return { id: result.insertId, courseId, userId };
+    return { 
+        id: result.insertId, 
+        courseId: courseId, 
+        userId: userId 
+    };
 }
 
 export async function getAllUserSelectedCourse(id: number): Promise<any[]> {

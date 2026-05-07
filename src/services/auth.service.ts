@@ -22,7 +22,7 @@ export async function googleAuth2(accessToken: string): Promise<{ jwtString: str
         let user = await getUserByUserId(userInfo.userId);
 
         if (user) {
-            user = (await updateUser(user.uid, userInfo) as User);
+            user = (await updateUser(user.id, userInfo) as User);
         } else {
             user = (await createUser(userInfo) as User);
         }
