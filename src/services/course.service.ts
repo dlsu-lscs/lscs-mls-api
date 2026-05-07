@@ -1,6 +1,7 @@
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import pool from 'config/db.js';
-import { spawnSync } from 'child_process';
+import { fetch } from 'scripts/fetch.js';
+import { login, isValidSession } from 'scripts/login.js';
 import { Course, CreateCourse, UpdateCourse } from 'dtos/course.dto.js';
 import { CourseEnrollment, CreateCourseEnrollment, UpdateCourseEnrollment } from 'dtos/course-enrollment.dto.js';
 import { CourseTimeslot, CreateCourseTimeslot, UpdateCourseTimeslot } from 'dtos/course-timeslot.dto.js';
@@ -126,17 +127,20 @@ async function updateCourse(
     })
 }
 
-// WILL ADD SCRAPING HERE
 export async function fetchCourses(id: string, course: string): Promise<any[]> {
     // Runs the python script
-    const process = spawnSync('python3', ['../lscs-mls-api/src/scripts/scraper.py', id, course], { encoding: 'utf-8' });
+    while (!isValidSession()) {
+        await login();
+    }
     
-    if (process.error) {
-        throw new Error('Error parsing: ' + process.error.message);
+    const classes = await fetch();
+
+    if (!classes) {
+        throw new Error('Error parsing.');
     }
 
     // Parses the output from the script
-    let [courses, timeslots, enrollments] = JSON.parse(process.stdout.trim());
+    let [courses, timeslots, enrollments] = classes;
 
     // Fetches existing courses from DB (for comparison)
     const existingCourses = await getAllCoursesByCourseName(course);
@@ -217,7 +221,7 @@ export async function getCourseById(id: number): Promise<any[] | null> {
         [id]
     );
 
-    return rows[0] | null;
+    return rows as any | null;
 }
 
 export async function getAllCoursesByCourseName(name: string): Promise<any[]> {

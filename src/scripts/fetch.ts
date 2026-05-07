@@ -1,5 +1,4 @@
 import fs from 'fs';
-// Import vanilla puppeteer and the addExtra wrapper
 import vanillaPuppeteer from 'puppeteer';
 import { addExtra } from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
@@ -9,7 +8,7 @@ const puppeteer = addExtra(vanillaPuppeteer as any);
 
 puppeteer.use(StealthPlugin());
 
-export async function scraper(): Promise<any[] | null> {
+export async function fetch(): Promise<any[] | null> {
   let cookiesObj;
 
   const browser = await puppeteer.launch({ 
@@ -21,7 +20,7 @@ export async function scraper(): Promise<any[] | null> {
 
   // Checks if the cookies file exists
   if (!fs.existsSync('./ah-cookies.json')) {
-    console.log("No cookie file found. Running login.");
+    console.log("No cookie file found.");
     await browser.close();
     return null;
   }
@@ -29,7 +28,7 @@ export async function scraper(): Promise<any[] | null> {
   // Checks if ah-cookies.json is empty; if not, reads cookies
   const cookiesString: string = fs.readFileSync('./ah-cookies.json').toString();
   if (cookiesString.trim() === "") {
-    console.log("No cookies found. Running login.");
+    console.log("No cookies found.");
     await browser.close();
     return null;
   }
@@ -38,7 +37,7 @@ export async function scraper(): Promise<any[] | null> {
 
   // Checks if the session id exists
   if (!cookies.find((item: any) => item.name === "ASP.NET_SessionId")) {
-    console.log("Secure SID not found. Running login.");
+    console.log("Secure SID not found.");
     await browser.close();
     return null;
   }
