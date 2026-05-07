@@ -39,7 +39,7 @@ export async function getAllUsers(): Promise<User[]> {
 export async function getUserById(id: number): Promise<User | null> {
     const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT * FROM users
-        WHERE id = ?`, 
+        WHERE uid = ?`, 
         [id]
     );
     
@@ -71,7 +71,7 @@ export async function updateUser(id: number, data: UpdateUser): Promise<User | n
     const [result] = await pool.query<ResultSetHeader>(
         `UPDATE users
         SET given_name = ?, family_name = ?, picture_url = ?
-        WHERE id = ?`, [
+        WHERE uid = ?`, [
             givenName,
             familyName,
             pictureUrl, 
@@ -89,7 +89,7 @@ export async function updateUserIdNumber(id: number, idNumber: string): Promise<
     const [result] = await pool.query<ResultSetHeader>(
         `UPDATE users
         SET id_number = ?
-        WHERE id = ?`,
+        WHERE uid = ?`,
         [idNumber, id]
     );
 
@@ -102,7 +102,7 @@ export async function updateUserIdNumber(id: number, idNumber: string): Promise<
 export async function deleteUser(id: number): Promise<boolean> {
     const [result] = await pool.query<ResultSetHeader>(
         `DELETE FROM users
-        WHERE id = ?`,
+        WHERE uid = ?`,
         [id]
     );
 
