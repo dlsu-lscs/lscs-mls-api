@@ -52,8 +52,8 @@ export async function getAllUserSelectedCourse(id: number): Promise<any[]> {
     const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT * FROM selected_courses sc
         JOIN courses c ON sc.course_id = c.cid
-        JOIN course_timeslots ct ON c.cid = ct.course_id 
-        JOIN course_enrollments ce on c.cid = ce.course_id
+        LEFT JOIN course_timeslots ct ON c.cid = ct.course_id 
+        LEFT JOIN course_enrollments ce on c.cid = ce.course_id
         WHERE user_id = ?`,
         [id]
     );
