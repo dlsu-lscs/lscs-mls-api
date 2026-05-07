@@ -16,7 +16,6 @@ router.delete('/:id', UserController.deleteUser);
 // Other routes involving user id
 router.post('/:id/courses', SelectedCourseService.createSelectedCourse);
 router.get('/:id/courses', SelectedCourseService.getAllUserSelectedCourse);
-router.put('/:id/id-number', UserController.updateUserIdNumber);
 router.delete('/:userId/courses/:courseId', SelectedCourseService.deleteSelectedCourse);
 
 export default router;

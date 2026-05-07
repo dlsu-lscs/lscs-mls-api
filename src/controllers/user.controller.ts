@@ -67,26 +67,6 @@ export async function updateUser(req: Request, res: Response) {
     }
 }
 
-export async function updateUserIdNumber(req: Request, res: Response) {
-    try {
-        const id = Number(req.params.id);
-        const idNumber = req.body.idNumber;
-        if (isNaN(id) || !idNumber) {
-            return res.status(400).json({ message: 'Invalid id or idNumber.' });
-        }
-
-        const success = await UserService.updateUserIdNumber(id, idNumber);
-
-        if (!success) {
-            return res.status(404).json({ message: 'User not found.' });
-        }
-        res.status(200).json({ idNumber: idNumber })
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: 'Error updating user ID number.', error: err });
-    }
-}
-
 export async function deleteUser(req: Request, res: Response) {
     try {
         const id = Number(req.params.id);

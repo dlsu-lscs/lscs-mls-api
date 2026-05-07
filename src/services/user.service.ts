@@ -85,20 +85,6 @@ export async function updateUser(id: number, data: UpdateUser): Promise<User | n
     return getUserById(id);
 }
 
-export async function updateUserIdNumber(id: number, idNumber: string): Promise<string | null> {
-    const [result] = await pool.query<ResultSetHeader>(
-        `UPDATE users
-        SET id_number = ?
-        WHERE uid = ?`,
-        [idNumber, id]
-    );
-
-    if (result.affectedRows === 0) {
-        return null;
-    }
-    return idNumber;
-}
-
 export async function deleteUser(id: number): Promise<boolean> {
     const [result] = await pool.query<ResultSetHeader>(
         `DELETE FROM users
