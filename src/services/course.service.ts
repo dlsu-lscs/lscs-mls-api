@@ -4,32 +4,28 @@ import { spawnSync } from 'child_process';
 import { Course, CreateCourse, UpdateCourse } from 'dtos/course.dto.js';
 import { CourseEnrollment, CreateCourseEnrollment, UpdateCourseEnrollment } from 'dtos/course-enrollment.dto.js';
 import { CourseTimeslot, CreateCourseTimeslot, UpdateCourseTimeslot } from 'dtos/course-timeslot.dto.js';
-import { get } from 'http';
-import { exists } from 'fs';
 
 export async function createCourse(
     courseData: CreateCourse,
     enrollmentData: CreateCourseEnrollment,
     timeslotData: CreateCourseTimeslot[]
-): Promise<number | null> {
+): Promise<void> {
     const {
-        classNumber,
         courseName,
         section,
-        remarks
+        modality,
+        term
     } = courseData;
 
     const [resultCourse] = await pool.query<ResultSetHeader>(
-        `INSERT INTO courses (class_number, course_name, section, remarks)
+        `INSERT INTO courses (course_name, section, modality, term)
         VALUES (?, ?, ?, ?)`, [
-            classNumber,
             courseName,
             section,
-            remarks
+            modality,
+            term
         ]
     );
-
-    await console.log("C1st " + resultCourse.affectedRows)
 
     const courseId = resultCourse.insertId;
 
@@ -46,8 +42,6 @@ export async function createCourse(
             courseId
         ]
     );
-
-    await console.log("C2nd")
 
     timeslotData.forEach(async (curr: CreateCourseTimeslot) => {
         let {
@@ -68,10 +62,6 @@ export async function createCourse(
             ]
         );
     })
-
-    await console.log("C3rd")
-
-    return courseId
 }
 
 async function updateCourse(
@@ -81,25 +71,23 @@ async function updateCourse(
     newTimeslotData: UpdateCourseTimeslot[]
 ): Promise<void> {
     const {
-        classNumber,
         courseName,
         section,
-        remarks
+        modality,
+        term
     } = newCourseData;
 
     const [resultCourse] = await pool.query<ResultSetHeader>(
         `UPDATE courses
-        SET class_number = ?, course_name = ?, section = ?, remarks = ?
-        WHERE id = ?`, [
-            classNumber,
+        SET course_name = ?, section = ?, modality = ?, term = ?
+        WHERE cid = ?`, [
             courseName,
             section,
-            remarks,
+            modality,
+            term,
             courseId
         ]
     );
-
-    await console.log("U1st " + resultCourse.affectedRows)
 
     const {
         enrollCap,
@@ -115,8 +103,6 @@ async function updateCourse(
             courseId
         ]
     );
-
-    await console.log("U2nd")
 
     newTimeslotData.forEach(async (curr: UpdateCourseTimeslot) => {
         let {
@@ -138,8 +124,6 @@ async function updateCourse(
             ]
         );
     })
-
-    await console.log("U3rd");
 }
 
 // WILL ADD SCRAPING HERE
@@ -203,7 +187,6 @@ export async function fetchCourses(id: string, course: string): Promise<any[]> {
         }
 
         // NOTE: For now, ignore the course_id found in the enrollment and timeslots of fetchedCourse
-
         return fetchedCourse;
     });
 
@@ -225,17 +208,16 @@ export async function fetchCourses(id: string, course: string): Promise<any[]> {
     return newCourses;
 }
 
-// FIX?
 export async function getCourseById(id: number): Promise<any[] | null> {
     const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT * FROM courses c
-        LEFT JOIN course_enrollments ce ON c.id = ce.course_id
-        LEFT JOIN course_timeslots ct ON c.id = ct.course_id
-        WHERE c.id = ?`,
+        LEFT JOIN course_enrollments ce ON c.cid = ce.course_id
+        LEFT JOIN course_timeslots ct ON c.cid = ct.course_id
+        WHERE c.cid = ?`,
         [id]
     );
 
-    return rows as any[] | null;
+    return rows[0] | null;
 }
 
 export async function getAllCoursesByCourseName(name: string): Promise<any[]> {
@@ -243,8 +225,8 @@ export async function getAllCoursesByCourseName(name: string): Promise<any[]> {
 
     const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT * FROM courses c
-        LEFT JOIN course_enrollments ce ON c.id = ce.course_id
-        LEFT JOIN course_timeslots ct ON c.id = ct.course_id
+        LEFT JOIN course_enrollments ce ON c.cid = ce.course_id
+        LEFT JOIN course_timeslots ct ON c.cid = ct.course_id
         WHERE course_name = ?`,
         [name]
     );
@@ -257,7 +239,7 @@ export async function getAllCoursesByCourseName(name: string): Promise<any[]> {
 export async function getInstructorsByCourseName(name: string): Promise<any[]> {
     const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT DISTINCT instructor FROM course_timeslots ct
-        JOIN courses c ON ct.course_id = c.id
+        JOIN courses c ON ct.course_id = c.cid
         WHERE course_name = ?`,
         [name]
     );
@@ -275,7 +257,6 @@ export async function deleteCourse(id: number): Promise<boolean> {
     return result.affectedRows > 0;
 }
 
-// IDK BOUT THIS
 export async function deleteCourseByCourseName(name: string): Promise<boolean> {
     const [result] = await pool.query<ResultSetHeader>(
         `DELETE FROM courses
