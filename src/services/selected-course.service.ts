@@ -1,6 +1,7 @@
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import pool from 'config/db.js';
 import { SelectedCourse, CreateSelectedCourse } from 'dtos/selected-course.dto.js';
+import { CourseInformation, mapToCourseInformationDTO } from 'dtos/course-information.dto.js';
 import { getCourseById } from 'services/course.service.js';
 
 export async function createSelectedCourse(data: CreateSelectedCourse): Promise<SelectedCourse | null> {
@@ -48,7 +49,7 @@ export async function createSelectedCourse(data: CreateSelectedCourse): Promise<
     };
 }
 
-export async function getAllUserSelectedCourse(id: number): Promise<any[]> {
+export async function getAllUserSelectedCourse(id: number): Promise<CourseInformation[]> {
     const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT * FROM selected_courses sc
         JOIN courses c ON sc.course_id = c.cid
@@ -58,7 +59,8 @@ export async function getAllUserSelectedCourse(id: number): Promise<any[]> {
         [id]
     );
 
-    return rows as any[];
+    const courses = mapToCourseInformationDTO(rows);
+    return courses;
 }
 
 export async function deleteSelectedCourse(userId: number, courseId: number): Promise<boolean> {

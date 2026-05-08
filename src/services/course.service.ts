@@ -2,9 +2,10 @@ import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import pool from 'config/db.js';
 import { fetch } from 'scripts/fetch.js';
 import { login, isValidSession } from 'scripts/login.js';
-import { Course, CreateCourse, UpdateCourse } from 'dtos/course.dto.js';
-import { CourseEnrollment, CreateCourseEnrollment, UpdateCourseEnrollment } from 'dtos/course-enrollment.dto.js';
-import { CourseTimeslot, CreateCourseTimeslot, UpdateCourseTimeslot } from 'dtos/course-timeslot.dto.js';
+import { CreateCourse, UpdateCourse } from 'dtos/course.dto.js';
+import { CreateCourseEnrollment, UpdateCourseEnrollment } from 'dtos/course-enrollment.dto.js';
+import { CreateCourseTimeslot, UpdateCourseTimeslot } from 'dtos/course-timeslot.dto.js';
+import { CourseInformation, mapToCourseInformationDTO } from 'dtos/course-information.dto.js';
 
 export async function createCourse(
     courseData: CreateCourse,
@@ -65,7 +66,7 @@ export async function createCourse(
     })
 }
 
-async function updateCourse(
+export async function updateCourse(
     courseId: number,
     newCourseData: UpdateCourse,
     newEnrollmentData: UpdateCourseEnrollment,
@@ -127,7 +128,7 @@ async function updateCourse(
     })
 }
 
-export async function fetchCourses(): Promise<any[]> {
+export async function fetchCourses(): Promise<void> {
     // Runs the python script
     while (!isValidSession()) {
         await login();
@@ -140,20 +141,17 @@ export async function fetchCourses(): Promise<any[]> {
     }
 
     // Parses the output from the script
-    let [courses, timeslots, enrollments] = classes;
+    const [courses, timeslots, enrollments] = classes;
+    const courseList = [...new Set(courses.map((item: any) => item.courseName))];
 
     // Fetches existing courses from DB (for comparison)
     const existingCourses = await getAllCoursesByCourseName(course);
-
-    await console.log("Fetched courses from DB");
 
     // Set to track processed class numbers
     const processedClassNumbers = new Set<number>();
 
     // Main iteration for adding/updating courses
     const updatePromises = courses.map(async (curr: any, index: number) => {
-        console.log(curr);
-
         let classNumber = Number(curr['classNumber']);
         processedClassNumbers.add(classNumber);
         
@@ -195,7 +193,7 @@ export async function fetchCourses(): Promise<any[]> {
     });
 
     // Waits for all updates/creates to finish in parallel
-    let newCourses = await Promise.all(updatePromises);
+    await Promise.all(updatePromises);
 
     // Filters out courses that were not processed (i.e., removed courses)
     const coursesToDelete = existingCourses.filter((c: any) => !processedClassNumbers.has(c['class_number']));
@@ -207,14 +205,11 @@ export async function fetchCourses(): Promise<any[]> {
         console.log(`Course with class number ${curr['class_number']} has been removed.`);
     }
     
-    await console.log(`Courses fetched for course name: ${course}`);
-
-    return newCourses;
+    await console.log(`Courses fetched.`);
 }
 
-// FIX RETURN
-// REMOVE RETURN IN FETCHCOURSES
-export async function getCourseById(id: number): Promise<any[] | null> {
+// FIX FETCHCOURSES
+export async function getCourseById(id: number): Promise<CourseInformation[]> {
     const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT * FROM courses c
         LEFT JOIN course_enrollments ce ON c.cid = ce.course_id
@@ -223,10 +218,11 @@ export async function getCourseById(id: number): Promise<any[] | null> {
         [id]
     );
 
-    return rows as any | null;
+    const courses = mapToCourseInformationDTO(rows);
+    return courses;
 }
 
-export async function getAllCoursesByCourseName(name: string): Promise<any[]> {
+export async function getAllCoursesByCourseName(name: string): Promise<CourseInformation[]> {
     // ADD FILTERS AND SORT IN THE FUTURE
 
     const [rows] = await pool.query<RowDataPacket[]>(
@@ -237,9 +233,8 @@ export async function getAllCoursesByCourseName(name: string): Promise<any[]> {
         [`%${name}%`]
     );
 
-    await console.log("ROWS fetched");
-
-    return rows as any[];
+    const courses = mapToCourseInformationDTO(rows);
+    return courses;
 }
 
 export async function getInstructorsByCourseName(name: string): Promise<any[]> {
