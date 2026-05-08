@@ -128,13 +128,13 @@ export async function updateCourse(
     })
 }
 
-export async function fetchCourses(): Promise<void> {
+export async function fetchCourses(part: number = 0): Promise<void> {
     // Runs the python script
     while (!isValidSession()) {
         await login();
     }
     
-    const classes = await fetch();
+    const classes = await fetch(part);
 
     if (!classes) {
         throw new Error('Error parsing.');
@@ -144,27 +144,39 @@ export async function fetchCourses(): Promise<void> {
     const [courses, timeslots, enrollments] = classes;
     const courseList = [...new Set(courses.map((item: any) => item.courseName))];
 
-    // Fetches existing courses from DB (for comparison)
-    const existingCourses = await getAllCoursesByCourseName(course);
-
-    // Set to track processed class numbers
-    const processedClassNumbers = new Set<number>();
+    
+    let existingCourses: CourseInformation[] = [];
+    let currentCourseName: string;
+    const processedClasses = new Set<{ courseName: string, section: string }>();
 
     // Main iteration for adding/updating courses
     const updatePromises = courses.map(async (curr: any, index: number) => {
-        let classNumber = Number(curr['classNumber']);
-        processedClassNumbers.add(classNumber);
-        
-        // Checks if this class number exists in our DB fetch
-        const existingClassNumberCourses = existingCourses.filter((c: any) => c['class_number'] === classNumber);
+        let currClass = {
+            courseName: curr['courseName'],
+            section: curr['section']
+        };
 
-        const currentEnrollment = enrollments[index];
-        const currentTimeslots = timeslots.filter((ts: any) => ts['course_id'] === curr['course_id']);
+        processedClasses.add(currClass);
+
+        if (currClass['courseName'] !== currentCourseName) {
+            currentCourseName = currClass['courseName'];
+            let fetchedCourses = await getAllCoursesByCourseName(currentCourseName);
+            existingCourses.push(...fetchedCourses);
+        }
+        
+        // Checks if this class exists in our DB fetch
+        const existingSimilarCourse = existingCourses.find((c: CourseInformation) => 
+            c['courseName'] === currClass['courseName']
+            && c['section'] === currClass['section']
+        );
+
+        const currentEnrollment = enrollments.find((e: any) => e['courseId'] === curr['courseId']);
+        const currentTimeslots = timeslots.filter((t: any) => t['courseId'] === curr['courseId']);
 
         let courseId;
 
-        if (existingClassNumberCourses.length > 0) {
-            courseId = existingClassNumberCourses[0]['course_id'];
+        if (existingSimilarCourse) {
+            courseId = existingSimilarCourse['id'];
 
             await updateCourse(
                 courseId,
@@ -179,30 +191,20 @@ export async function fetchCourses(): Promise<void> {
                 currentTimeslots
             ); 
         }
-
-        console.log(courseId)
-
-        const fetchedCourse = {
-            class_number: courseId,
-            enrollment: currentEnrollment,
-            timeslots: currentTimeslots
-        }
-
-        // NOTE: For now, ignore the course_id found in the enrollment and timeslots of fetchedCourse
-        return fetchedCourse;
     });
 
     // Waits for all updates/creates to finish in parallel
     await Promise.all(updatePromises);
 
     // Filters out courses that were not processed (i.e., removed courses)
-    const coursesToDelete = existingCourses.filter((c: any) => !processedClassNumbers.has(c['class_number']));
+    const coursesToDelete = existingCourses.filter((c: any) => !processedClasses.has({
+        courseName: c['courseName'],
+        section: c['section']
+    }));
 
     // Deletes courses that were not present in the latest fetch
     for (const curr of coursesToDelete) {
-        console.log(curr)
         await deleteCourse(curr['id']);
-        console.log(`Course with class number ${curr['class_number']} has been removed.`);
     }
     
     await console.log(`Courses fetched.`);

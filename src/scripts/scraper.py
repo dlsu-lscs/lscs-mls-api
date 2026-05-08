@@ -10,6 +10,7 @@ url3 = "https://archershub.dlsu.edu.ph/CourseFinder/GetCFData/"
 url4 = "https://archershub.dlsu.edu.ph/CourseFinder/GetScheduleData/"
 
 session_id = sys.argv[1]
+part = int(sys.argv[2])
 
 # GET COOKIES FROM AH
 cookies = {
@@ -50,9 +51,29 @@ course_list = fetch_courses.json()['CourseDrp']
 classes = []
 class_schedules = []
 
-while i < len(course_list):
+no_courses = len(course_list)
+
+q2 = no_courses // 2
+q1 = q2 // 2
+q3 = q2 + q1
+
+match part:
+    case 1: 
+        start, end = 0, q1
+    case 2:
+        start, end = q1, q2
+    case 3:
+        start, end = q2, q3
+    case 4:
+        start, end = q3, no_courses
+    case _:
+        start, end = 0, no_courses
+
+i = start
+        
+while i < end:
     course_classes = []
-    k = i + 25 if i + 25 <= len(course_list) else len(course_list)
+    k = i + 25 if i + 25 <= end else end
     
     for j in range(i, k):
         payload["Courseid"] = course_list[j]["COURSE_CREATION_ID"]
@@ -111,14 +132,14 @@ for item in classes:
     course_dict[course_dict_key] = course_id
 
     courses.append({
-        "course_id": course_id,
+        "courseId": course_id,
         "courseName": item["SUBJECT_NAME"],
         "section": item["SECTION_NAME"],
         "term": current_term_name
     })
 
     course_enrollments.append({
-        "course_id": course_id,
+        "courseId": course_id,
         "enrollCap": item["CAPACITY"],
         "enrolled": item["ENLISTED"]
     })
@@ -146,7 +167,7 @@ for item in week_schedules:
         class_time = class_start + " - " + class_end
 
         course_timeslots.append({
-            "course_id": class_course_id,
+            "courseId": class_course_id,
             "day": class_day,
             "time": class_time,
             "room": class_room,

@@ -8,7 +8,7 @@ const puppeteer = addExtra(vanillaPuppeteer as any);
 
 puppeteer.use(StealthPlugin());
 
-export async function fetch(): Promise<any[] | null> {
+export async function fetch(part: number = 0): Promise<any[] | null> {
   let cookiesObj;
 
   const browser = await puppeteer.launch({ 
@@ -37,7 +37,7 @@ export async function fetch(): Promise<any[] | null> {
 
   // Checks if the session id exists
   if (!cookies.find((item: any) => item.name === "ASP.NET_SessionId")) {
-    console.log("Secure SID not found.");
+    console.log("Session ID not found.");
     await browser.close();
     return null;
   }
@@ -67,7 +67,7 @@ export async function fetch(): Promise<any[] | null> {
 
   let sessionId = cookiesObj["ASP.NET_SessionId"];
 
-  const process = spawnSync('python3', ['./scraper.py', sessionId], { encoding: 'utf-8' });
+  const process = spawnSync('python3', ['./scraper.py', sessionId, part], { encoding: 'utf-8' });
 
   if (process.error) {
     console.error('Error parsing: ' + process.error.message);

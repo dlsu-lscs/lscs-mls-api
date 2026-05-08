@@ -3,12 +3,13 @@ import * as CourseService from 'services/course.service.js';
 
 export async function fetchCourses(req: Request, res: Response) {
     try {
-        const courses = await CourseService.fetchCourses();
-
-        if (courses.length === 0) {
-            return res.status(404).json({ message: 'Course/s not found.' });
+        let part = Number(req.body.part);
+        if (!part || part < 1 || part > 4) {
+            part = 0;
         }
-        return res.status(200).json(courses);
+
+        const courses = await CourseService.fetchCourses(part);
+        return res.status(200).json({ message: 'Courses fetched successfully.' });
     } catch (err: any) {
         console.log(err);
         if (err.message.includes("Error parsing")) {
@@ -40,7 +41,7 @@ export async function getCourseById(req: Request, res: Response) {
 
 export async function getAllCoursesByCourseName(req: Request, res: Response) {
     try {
-        const name = req.body.courseName as string;
+        const name = req.params.courseName as string;
 
         if (!name) {
             return res.status(400).json({ message: "No course name was given." })

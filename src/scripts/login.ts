@@ -38,7 +38,7 @@ export async function isValidSession(): Promise<boolean> {
 
   // Checks if the session id exists
   if (!cookies.find((item: any) => item.name === "ASP.NET_SessionId")) {
-    console.log("Secure SID not found. Running login.");
+    console.log("Session ID not found. Running login.");
     await browser.close();
     return false;
   }
