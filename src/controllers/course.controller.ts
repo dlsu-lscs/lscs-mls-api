@@ -46,7 +46,7 @@ export async function getAllCoursesByCourseName(req: Request, res: Response) {
             return res.status(400).json({ message: "No course name was given." })
         }
 
-        const course = await CourseService.getAllCoursesByCourseName(name.toUpperCase());
+        const course = await CourseService.getAllCoursesByCourseName(name);
 
         if (course.length === 0) {
             return res.status(404).json({ message: 'Course/s not found.' });

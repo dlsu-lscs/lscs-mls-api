@@ -233,8 +233,8 @@ export async function getAllCoursesByCourseName(name: string): Promise<any[]> {
         `SELECT * FROM courses c
         LEFT JOIN course_enrollments ce ON c.cid = ce.course_id
         LEFT JOIN course_timeslots ct ON c.cid = ct.course_id
-        WHERE course_name = ?`,
-        [name]
+        WHERE course_name LIKE ?`,
+        [`%${name}%`]
     );
 
     await console.log("ROWS fetched");
@@ -246,8 +246,8 @@ export async function getInstructorsByCourseName(name: string): Promise<any[]> {
     const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT DISTINCT instructor FROM course_timeslots ct
         JOIN courses c ON ct.course_id = c.cid
-        WHERE course_name = ?`,
-        [name]
+        WHERE course_name LIKE ?`,
+        [`%${name}%`]
     );
 
     return rows as any[];
