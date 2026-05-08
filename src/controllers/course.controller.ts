@@ -3,19 +3,7 @@ import * as CourseService from 'services/course.service.js';
 
 export async function fetchCourses(req: Request, res: Response) {
     try {
-        const id = req.body.idNumber;
-        if (!id) {
-            return res.status(400).json({ message: 'Please enter a valid ID number.' });
-        }
-
-        const course = req.body.courseName;
-        if (!course) {
-            return res.status(400).json({ message: 'Please enter a course name.' });
-        }
-
-        console.log("start fetching")
-
-        const courses = await CourseService.fetchCourses(id, course.toUpperCase());
+        const courses = await CourseService.fetchCourses();
 
         if (courses.length === 0) {
             return res.status(404).json({ message: 'Course/s not found.' });

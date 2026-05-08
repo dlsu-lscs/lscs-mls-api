@@ -127,7 +127,7 @@ async function updateCourse(
     })
 }
 
-export async function fetchCourses(id: string, course: string): Promise<any[]> {
+export async function fetchCourses(): Promise<any[]> {
     // Runs the python script
     while (!isValidSession()) {
         await login();
@@ -212,6 +212,8 @@ export async function fetchCourses(id: string, course: string): Promise<any[]> {
     return newCourses;
 }
 
+// FIX RETURN
+// REMOVE RETURN IN FETCHCOURSES
 export async function getCourseById(id: number): Promise<any[] | null> {
     const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT * FROM courses c
