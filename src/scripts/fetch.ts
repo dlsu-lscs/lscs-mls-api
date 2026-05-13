@@ -51,7 +51,7 @@ export async function fetch(part: number = 0): Promise<any[] | null> {
   console.log("ArchersHub Opened. Session cookies injected.");
   
   // Navigates to AH for instant log in (if cookies are still active).
-  page.goto('https://archershub.dlsu.edu.ph/StudentDashboard', { 
+  await page.goto('https://archershub.dlsu.edu.ph/StudentDashboard', { 
     waitUntil: 'networkidle2' 
   });
   
@@ -82,6 +82,6 @@ export async function fetch(part: number = 0): Promise<any[] | null> {
   fs.writeFileSync('./ah-cookies.json', JSON.stringify(updatedCookies, null, 2));
 
   console.log("Cookies saved to ah-cookies.json.");
-  
+
   return JSON.parse(process.stdout.trim());
 }

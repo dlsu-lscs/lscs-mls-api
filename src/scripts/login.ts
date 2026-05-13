@@ -52,7 +52,7 @@ export async function isValidSession(): Promise<boolean> {
   console.log("ArchersHub Opened. Session cookies injected.");
   
   // Navigates to AH for instant log in (if cookies are still active).
-  page.goto('https://archershub.dlsu.edu.ph/StudentDashboard', { 
+  await page.goto('https://archershub.dlsu.edu.ph/StudentDashboard', { 
     waitUntil: 'networkidle2' 
   });
   
