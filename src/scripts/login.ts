@@ -62,8 +62,9 @@ export async function isValidSession(): Promise<boolean> {
       .then(() => console.log('Session is valid.'));
   } catch (e) {
     console.error("Cookies have expired. Running login.");
-    await browser.close();
     return false;
+  } finally {
+    await browser.close();
   }
 
   return true;
@@ -130,10 +131,9 @@ export async function login() {
     fs.writeFileSync('./ah-cookies.json', JSON.stringify(cookies, null, 2));
     
     console.log("Cookies saved to ah-cookies.json.");
-    await browser.close();
-    return;
   } catch (e: any) {
     console.error("Failed to login. " + (e as Error).message);
+  } finally {
     await browser.close();
     return;
   }

@@ -61,8 +61,9 @@ export async function fetch(part: number = 0): Promise<any[] | null> {
       .then(() => console.log('Login successful. Fetching courses.'));
   } catch (e) {
     console.error("Cookies have expired. Running login.");
-    await browser.close();
     return null;
+  } finally {
+    await browser.close();
   }
 
   let sessionId = cookiesObj["ASP.NET_SessionId"];
@@ -80,8 +81,7 @@ export async function fetch(part: number = 0): Promise<any[] | null> {
   const updatedCookies = await browser.cookies();
   fs.writeFileSync('./ah-cookies.json', JSON.stringify(updatedCookies, null, 2));
 
-  console.log("Cookies saved to ah-cookies.json. Closing browser.");
-  await browser.close();
-
+  console.log("Cookies saved to ah-cookies.json.");
+  
   return JSON.parse(process.stdout.trim());
 }
