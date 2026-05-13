@@ -1,7 +1,12 @@
 import { ImapFlow } from "imapflow";
 
 export async function otpFetch(): Promise<string | undefined> {
+    if (!process.env.AH_GMAIL_ADDRESS || !process.env.AH_GMAIL_PASSWORD) {
+        throw new Error("No AH credentials provided.");
+    }
+
     let emailBody;
+    
     const client = new ImapFlow({
         host: 'imap.gmail.com',
         port: 993,
@@ -43,7 +48,7 @@ export async function otpFetch(): Promise<string | undefined> {
             }
         }
     } catch (error: any) {
-        throw new Error(error.message);
+        return;
     } finally {
         lock.release();
         await client.logout();
