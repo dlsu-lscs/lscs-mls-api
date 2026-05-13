@@ -46,9 +46,8 @@ export async function otpFetch(): Promise<string | undefined> {
         throw new Error(error.message);
     } finally {
         lock.release();
+        await client.logout();
     }
-
-    await client.logout();
 
     if (!emailBody) {
         throw new Error("Recent OTP email not found");
