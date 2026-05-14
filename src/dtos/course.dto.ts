@@ -23,7 +23,11 @@ export interface UpdateCourse {
     term?: string
 }
 
-export function mapToCourseDTO(dbRow: any): Course {
+export function mapToCourseDTO(dbRow: any): Course | null {
+    if (!dbRow) {
+        return null;
+    }
+    
     return {
         id: dbRow.cid,
         courseName: dbRow.course_name,

@@ -21,7 +21,11 @@ export interface UpdateUser {
     pictureUrl?: string
 }
 
-export function mapToUserDTO(dbRow: any): User {
+export function mapToUserDTO(dbRow: any): User | null {
+    if (!dbRow) {
+        return null;
+    }
+
     return {
         id: dbRow.uid,
         email: dbRow.email,

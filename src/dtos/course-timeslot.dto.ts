@@ -21,7 +21,11 @@ export interface UpdateCourseTimeslot {
     instructor?: string
 }
 
-export function mapToCourseTimeslotDTO(dbRow: any): CourseTimeslot {
+export function mapToCourseTimeslotDTO(dbRow: any): CourseTimeslot | null {
+    if (!dbRow) {
+        return null;
+    }
+    
     return {
         id: dbRow.tid,
         day: dbRow.day,
