@@ -18,19 +18,26 @@ export async function createSelectedCourse(data: CreateSelectedCourse): Promise<
     
     const userCourses = await getAllUserSelectedCourse(userId);
 
-    for (const sc of course) {
-        const [scStart, scEnd] = sc.courseName.split("-");
+    const isAlreadyEnrolled = userCourses.some(uc => uc.courseName === course.courseName);
+    if (isAlreadyEnrolled) {
+        throw new Error(`Conflict: a different class of chosen course is already chosen.`);
+    }
+
+    for (const sc of course.timeslots) {
+        const [scStart, scEnd] = sc.time.split("-");
 
         for (const uc of userCourses) {
-            if (uc.courseName === sc.courseName) {
-                throw new Error(`Conflict: class is already selected.`);
-            }
-            
-            const [ucStart, ucEnd] = uc.courseName.split("-");
+            for (const usc of uc.timeslots) {
+                if (sc.day !== usc.day) {
+                    continue; 
+                }
 
-            if ((scStart >= ucStart && scStart <= ucEnd) || (scEnd >= scStart && scEnd <= scEnd)) {
-                throw new Error(`Conflict: selected course conflicts with classes in schedule.`);
-            }
+                const [ucStart, ucEnd] = usc.time.split("-");
+
+                if ((scStart < ucEnd && scEnd > ucStart)) {
+                    throw new Error(`Conflict: selected course conflicts with classes in schedule.`);
+                }
+            } 
         }
     }
 

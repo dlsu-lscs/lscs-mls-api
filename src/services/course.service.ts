@@ -161,7 +161,7 @@ export async function fetchCourses(part: number = 0): Promise<void> {
         if (currClass['courseName'] !== currentCourseName) {
             currentCourseName = currClass['courseName'];
             let fetchedCourses = await getAllCoursesByCourseName(currentCourseName);
-            existingCourses.push(...fetchedCourses);
+            existingCourses.push(fetchedCourses);
         }
         
         // Checks if this class exists in our DB fetch
@@ -207,11 +207,10 @@ export async function fetchCourses(part: number = 0): Promise<void> {
         await deleteCourse(curr['id']);
     }
     
-    await console.log(`Courses fetched.`);
+    console.log(`Courses fetched.`);
 }
 
-// FIX FETCHCOURSES
-export async function getCourseById(id: number): Promise<CourseInformation[]> {
+export async function getCourseById(id: number): Promise<CourseInformation> {
     const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT * FROM courses c
         LEFT JOIN course_enrollments ce ON c.cid = ce.course_id
@@ -220,13 +219,11 @@ export async function getCourseById(id: number): Promise<CourseInformation[]> {
         [id]
     );
 
-    const courses = mapToCourseInformationDTO(rows);
-    return courses;
+    const course = mapToCourseInformationDTO(rows)[0];
+    return course;
 }
 
-export async function getAllCoursesByCourseName(name: string): Promise<CourseInformation[]> {
-    // ADD FILTERS AND SORT IN THE FUTURE
-
+export async function getAllCoursesByCourseName(name: string): Promise<CourseInformation> {
     const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT * FROM courses c
         LEFT JOIN course_enrollments ce ON c.cid = ce.course_id
@@ -235,7 +232,7 @@ export async function getAllCoursesByCourseName(name: string): Promise<CourseInf
         [`%${name}%`]
     );
 
-    const courses = mapToCourseInformationDTO(rows);
+    const courses = mapToCourseInformationDTO(rows)[0];
     return courses;
 }
 
