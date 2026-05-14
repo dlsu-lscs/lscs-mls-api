@@ -23,20 +23,20 @@ export async function createSelectedCourse(data: CreateSelectedCourse): Promise<
 
         for (const uc of userCourses) {
             if (uc.courseName === sc.courseName) {
-                throw new Error(`A class of course name ${uc.courseName} is already selected.`);
+                throw new Error(`Conflict: class is already selected.`);
             }
             
             const [ucStart, ucEnd] = uc.courseName.split("-");
 
             if ((scStart >= ucStart && scStart <= ucEnd) || (scEnd >= scStart && scEnd <= scEnd)) {
-                throw new Error(`Selected course conflicts with classes in schedule.`);
+                throw new Error(`Conflict: selected course conflicts with classes in schedule.`);
             }
         }
     }
 
     const [result] = await pool.query<ResultSetHeader>(
         `INSERT INTO selected_courses (course_id, user_id)
-        VALUES (? ?)`, [
+        VALUES (?, ?)`, [
             courseId,
             userId
         ]

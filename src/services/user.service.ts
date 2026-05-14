@@ -14,7 +14,7 @@ export async function createUser(data: CreateUser): Promise<User | null> {
     const existingUser = await getUserByUserId(userId);
 
     if (existingUser) {
-        return existingUser;
+        return null;
     }
     
     const [result] = await pool.query<ResultSetHeader>(

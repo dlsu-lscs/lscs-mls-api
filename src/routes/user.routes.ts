@@ -13,8 +13,8 @@ router.get('/:id', UserController.getUserById);
 router.put('/:id', UserController.updateUser);
 router.delete('/:id', UserController.deleteUser);
 
-// Other routes involving user id
-router.post('/:id/courses', SelectedCourseService.createSelectedCourse);
+// Routes for selected courses
+router.post('/courses', SelectedCourseService.createSelectedCourse);
 router.get('/:id/courses', SelectedCourseService.getAllUserSelectedCourse);
 router.delete('/:userId/courses/:courseId', SelectedCourseService.deleteSelectedCourse);
 

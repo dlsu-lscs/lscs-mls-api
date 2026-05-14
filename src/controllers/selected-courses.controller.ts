@@ -6,13 +6,12 @@ export async function createSelectedCourse(req: Request, res: Response) {
         const course = await SelectedCourseService.createSelectedCourse(req.body);
         res.status(201).json(course);
     } catch (err: any) {
-        console.log(err);
-        if (err.message === "Selected course doesn't exist.") {
+        if (err.message.includes("Selected course doesn't exist")) {
             res.status(404).json({ message: err.message });
-        } else if (err.message.includes(" course ")) {
+        } else if (err.message.includes("Conflict")) {
             res.status(409).json({ message: err.message });
         } else {
-            res.status(500).json({ message: 'Error creating user-selected course.', error: err });
+            res.status(500).json({ message: 'Internal server error.' });
         }
     }
 }
@@ -24,15 +23,14 @@ export async function getAllUserSelectedCourse(req: Request, res: Response) {
             return res.status(400).json({ message: 'Invalid user ID.' });
         }
 
-        const user = await SelectedCourseService.getAllUserSelectedCourse(id);
+        const courses = await SelectedCourseService.getAllUserSelectedCourse(id);
 
-        if (user.length === 0) {
-            return res.status(404).json({ message: 'User not found.' });
+        if (courses.length === 0) {
+            return res.status(404).json({ message: 'No courses found for user.' });
         }
-        res.status(200).json(user);
+        res.status(200).json(courses);
     } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: 'Error fetching user.', error: err });
+        res.status(500).json({ message: 'Internal server error.' });
     }
 }
 
@@ -54,7 +52,6 @@ export async function deleteSelectedCourse(req: Request, res: Response) {
         }
         res.status(200).json({ message: 'Course deleted successfully.' })
     } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: 'Error deleting course.', error: err });
+        res.status(500).json({ message: 'Internal server error.' });
     }
 }

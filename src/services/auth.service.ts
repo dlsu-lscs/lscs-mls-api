@@ -6,7 +6,9 @@ import { getUserByUserId, createUser, updateUser } from './user.service.js';
 export async function googleAuth2(accessToken: string): Promise<{ jwtString: string, user: User }> {
     try {
         const response = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
-            headers: { Authorization: `Bearer ${accessToken}` }
+            headers: { 
+                Authorization: `Bearer ${accessToken}` 
+            }
         });
 
         const { data: payload } = response;
@@ -32,7 +34,7 @@ export async function googleAuth2(accessToken: string): Promise<{ jwtString: str
         }); 
 
         return { jwtString, user };
-    } catch (error) {
-        throw new Error ('Error on authentication: ' + (error as Error).message);
+    } catch {
+        throw new Error ("Error on authentication.");
     }
 }
