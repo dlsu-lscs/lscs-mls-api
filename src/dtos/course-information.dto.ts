@@ -4,7 +4,7 @@ import { CourseTimeslot, mapToCourseTimeslotDTO } from "./course-timeslot.dto.js
 
 export interface CourseInformation extends Course {
     status: Omit<CourseEnrollment, 'courseId'>;
-    timeslots: Omit<CourseTimeslot, 'courseId'>[]
+    timeslots: Omit<CourseTimeslot, 'courseId'>[];
 }
 
 export function mapToCourseInformationDTO(dbRows: any[]): CourseInformation[] {
