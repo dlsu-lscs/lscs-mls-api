@@ -79,7 +79,7 @@ export async function updateCourse(
         term
     } = newCourseData;
 
-    const [resultCourse] = await pool.query<ResultSetHeader>(
+    await pool.query<ResultSetHeader>(
         `UPDATE courses
         SET course_name = ?, section = ?, modality = ?, term = ?
         WHERE cid = ?`, [
@@ -137,13 +137,11 @@ export async function fetchCourses(part: number = 0): Promise<void> {
     const classes = await fetch(part);
 
     if (!classes) {
-        throw new Error('Error parsing.');
+        throw new Error('Parsing error.');
     }
 
     // Parses the output from the script
     const [courses, timeslots, enrollments] = classes;
-    const courseList = [...new Set(courses.map((item: any) => item.courseName))];
-
     
     let existingCourses: CourseInformation[] = [];
     let currentCourseName: string;

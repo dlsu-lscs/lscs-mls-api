@@ -2,7 +2,7 @@ import { ImapFlow } from "imapflow";
 
 export async function otpFetch(): Promise<string | undefined> {
     if (!process.env.AH_GMAIL_ADDRESS || !process.env.AH_GMAIL_PASSWORD) {
-        throw new Error("No AH credentials provided.");
+        throw new Error("OTP Error: No AH credentials provided.");
     }
 
     let emailBody;
@@ -24,11 +24,11 @@ export async function otpFetch(): Promise<string | undefined> {
 
     try {
         if (!client.mailbox) {
-            throw new Error("Mailbox not found");
+            throw new Error("OTP Error: Mailbox not found");
         }
 
         if (client.mailbox.exists === 0) {
-            throw new Error("No messages in mailbox");            
+            throw new Error("OTP Error: No messages in mailbox");            
         }
 
         let range = Math.max(1, client.mailbox.exists - 9) + ':*'
@@ -55,13 +55,13 @@ export async function otpFetch(): Promise<string | undefined> {
     }
 
     if (!emailBody) {
-        throw new Error("Recent OTP email not found");
+        throw new Error("OTP Error: Recent OTP email not found");
     }
 
     const otpString = emailBody.match(/(<strong>)\d{6}(<\/strong>)/g);
 
     if (!otpString) {
-        throw new Error("Recent OTP not found");
+        throw new Error("OTP Error: Recent OTP not found");
     }
 
     let otp = otpString[0].replace("<strong>", "").replace("</strong>", "");

@@ -132,9 +132,8 @@ export async function login() {
     
     console.log("Cookies saved to ah-cookies.json.");
   } catch (e: any) {
-    console.error("Failed to login. " + (e as Error).message);
+    return;
   } finally {
     await browser.close();
-    return;
   }
 }
