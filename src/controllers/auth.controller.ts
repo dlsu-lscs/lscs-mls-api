@@ -9,29 +9,27 @@ export const handleAuthentication = async function (req: Request,  res: Response
         const result = await AuthService.googleAuth2(accessToken);
         res.status(200).json(result);
     } catch (error: any) {
-        console.error({ error: (error as Error).message });
-        if (error.message.includes('Error on authentication')) {
-            res.status(403).json({ error: (error as Error).message });
+        if (error.message.includes("Error on authentication")) {
+            res.status(403).json({ message: error.message });
         } else {
-            res.status(500).json({ error: (error as Error).message });
+            res.status(500).json({ message: "Internal server error." });
         }
     }
 };
 
-export const handleCallback = async function (req: Request, res: Response): Promise<undefined> {
+export const handleCallback = async function (req: Request, res: Response) {
     const { code } = req.query;
 
     try {
         if (!code) {
-            res.status(400).json({ error: 'Authorization code is missing' });
-            return;
+            return res.status(400).json({ message: 'Authorization code is missing' });
         }
 
         const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
             client_id: process.env.GOOGLE_CLIENT_ID,
             client_secret: process.env.GOOGLE_CLIENT_SECRET,
             code: code as string,
-            grant_type: 'authorization_code',
+            grant_type: "authorization_code",
             redirect_uri: process.env.GOOGLE_REDIRECT_URI
         });
 
@@ -41,11 +39,10 @@ export const handleCallback = async function (req: Request, res: Response): Prom
         
         res.status(200).json({ token: result });
     } catch (error: any) {
-        console.error({ error: (error as Error).message });
-        if (error.message.includes('Error on authentication')) {
-            res.status(403).json({ error: (error as Error).message });
+        if (error.message.includes("Error on authentication")) {
+            res.status(403).json({ message: error.message });
         } else {
-            res.status(500).json({ error: (error as Error).message });
+            res.status(500).json({ message: "Internal server error." });
         }
     }
 };

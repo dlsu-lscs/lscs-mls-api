@@ -1,35 +1,33 @@
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import pool from 'config/db.js';
-import { spawnSync } from 'child_process';
-import { Course, CreateCourse, UpdateCourse } from 'dtos/course.dto.js';
-import { CourseEnrollment, CreateCourseEnrollment, UpdateCourseEnrollment } from 'dtos/course-enrollment.dto.js';
-import { CourseTimeslot, CreateCourseTimeslot, UpdateCourseTimeslot } from 'dtos/course-timeslot.dto.js';
-import { get } from 'http';
-import { exists } from 'fs';
+import { fetch } from 'scripts/fetch.js';
+import { login, isValidSession } from 'scripts/login.js';
+import { CreateCourse, UpdateCourse } from 'dtos/course.dto.js';
+import { CreateCourseEnrollment, UpdateCourseEnrollment } from 'dtos/course-enrollment.dto.js';
+import { CreateCourseTimeslot, UpdateCourseTimeslot } from 'dtos/course-timeslot.dto.js';
+import { CourseInformation, mapToCourseInformationDTO } from 'dtos/course-information.dto.js';
 
 export async function createCourse(
     courseData: CreateCourse,
     enrollmentData: CreateCourseEnrollment,
     timeslotData: CreateCourseTimeslot[]
-): Promise<number | null> {
+): Promise<void> {
     const {
-        classNumber,
         courseName,
         section,
-        remarks
+        modality,
+        term
     } = courseData;
 
     const [resultCourse] = await pool.query<ResultSetHeader>(
-        `INSERT INTO courses (class_number, course_name, section, remarks)
+        `INSERT INTO courses (course_name, section, modality, term)
         VALUES (?, ?, ?, ?)`, [
-            classNumber,
             courseName,
             section,
-            remarks
+            modality,
+            term
         ]
     );
-
-    await console.log("C1st " + resultCourse.affectedRows)
 
     const courseId = resultCourse.insertId;
 
@@ -46,8 +44,6 @@ export async function createCourse(
             courseId
         ]
     );
-
-    await console.log("C2nd")
 
     timeslotData.forEach(async (curr: CreateCourseTimeslot) => {
         let {
@@ -68,38 +64,32 @@ export async function createCourse(
             ]
         );
     })
-
-    await console.log("C3rd")
-
-    return courseId
 }
 
-async function updateCourse(
+export async function updateCourse(
     courseId: number,
     newCourseData: UpdateCourse,
     newEnrollmentData: UpdateCourseEnrollment,
     newTimeslotData: UpdateCourseTimeslot[]
 ): Promise<void> {
     const {
-        classNumber,
         courseName,
         section,
-        remarks
+        modality,
+        term
     } = newCourseData;
 
-    const [resultCourse] = await pool.query<ResultSetHeader>(
+    await pool.query<ResultSetHeader>(
         `UPDATE courses
-        SET class_number = ?, course_name = ?, section = ?, remarks = ?
-        WHERE id = ?`, [
-            classNumber,
+        SET course_name = ?, section = ?, modality = ?, term = ?
+        WHERE cid = ?`, [
             courseName,
             section,
-            remarks,
+            modality,
+            term,
             courseId
         ]
     );
-
-    await console.log("U1st " + resultCourse.affectedRows)
 
     const {
         enrollCap,
@@ -115,8 +105,6 @@ async function updateCourse(
             courseId
         ]
     );
-
-    await console.log("U2nd")
 
     newTimeslotData.forEach(async (curr: UpdateCourseTimeslot) => {
         let {
@@ -138,47 +126,55 @@ async function updateCourse(
             ]
         );
     })
-
-    await console.log("U3rd");
 }
 
-// WILL ADD SCRAPING HERE
-export async function fetchCourses(id: string, course: string): Promise<any[]> {
+export async function fetchCourses(part: number = 0): Promise<void> {
     // Runs the python script
-    const process = spawnSync('python3', ['../lscs-mls-api/src/scripts/scraper.py', id, course], { encoding: 'utf-8' });
+    while (!isValidSession()) {
+        await login();
+    }
     
-    if (process.error) {
-        throw new Error('Error parsing: ' + process.error.message);
+    const classes = await fetch(part);
+
+    if (!classes) {
+        throw new Error('Parsing error.');
     }
 
     // Parses the output from the script
-    let [courses, timeslots, enrollments] = JSON.parse(process.stdout.trim());
-
-    // Fetches existing courses from DB (for comparison)
-    const existingCourses = await getAllCoursesByCourseName(course);
-
-    await console.log("Fetched courses from DB");
-
-    // Set to track processed class numbers
-    const processedClassNumbers = new Set<number>();
+    const [courses, timeslots, enrollments] = classes;
+    
+    let existingCourses: CourseInformation[] = [];
+    let currentCourseName: string;
+    const processedClasses = new Set<{ courseName: string, section: string }>();
 
     // Main iteration for adding/updating courses
     const updatePromises = courses.map(async (curr: any, index: number) => {
-        console.log(curr);
+        let currClass = {
+            courseName: curr['courseName'],
+            section: curr['section']
+        };
 
-        let classNumber = Number(curr['classNumber']);
-        processedClassNumbers.add(classNumber);
+        processedClasses.add(currClass);
+
+        if (currClass['courseName'] !== currentCourseName) {
+            currentCourseName = currClass['courseName'];
+            let fetchedCourses = await getAllCoursesByCourseName(currentCourseName);
+            existingCourses.push(fetchedCourses);
+        }
         
-        // Checks if this class number exists in our DB fetch
-        const existingClassNumberCourses = existingCourses.filter((c: any) => c['class_number'] === classNumber);
+        // Checks if this class exists in our DB fetch
+        const existingSimilarCourse = existingCourses.find((c: CourseInformation) => 
+            c['courseName'] === currClass['courseName']
+            && c['section'] === currClass['section']
+        );
 
-        const currentEnrollment = enrollments[index];
-        const currentTimeslots = timeslots.filter((ts: any) => ts['course_id'] === curr['course_id']);
+        const currentEnrollment = enrollments.find((e: any) => e['courseId'] === curr['courseId']);
+        const currentTimeslots = timeslots.filter((t: any) => t['courseId'] === curr['courseId']);
 
         let courseId;
 
-        if (existingClassNumberCourses.length > 0) {
-            courseId = existingClassNumberCourses[0]['course_id'];
+        if (existingSimilarCourse) {
+            courseId = existingSimilarCourse['id'];
 
             await updateCourse(
                 courseId,
@@ -193,73 +189,57 @@ export async function fetchCourses(id: string, course: string): Promise<any[]> {
                 currentTimeslots
             ); 
         }
-
-        console.log(courseId)
-
-        const fetchedCourse = {
-            class_number: courseId,
-            enrollment: currentEnrollment,
-            timeslots: currentTimeslots
-        }
-
-        // NOTE: For now, ignore the course_id found in the enrollment and timeslots of fetchedCourse
-
-        return fetchedCourse;
     });
 
     // Waits for all updates/creates to finish in parallel
-    let newCourses = await Promise.all(updatePromises);
+    await Promise.all(updatePromises);
 
     // Filters out courses that were not processed (i.e., removed courses)
-    const coursesToDelete = existingCourses.filter((c: any) => !processedClassNumbers.has(c['class_number']));
+    const coursesToDelete = existingCourses.filter((c: any) => !processedClasses.has({
+        courseName: c['courseName'],
+        section: c['section']
+    }));
 
     // Deletes courses that were not present in the latest fetch
     for (const curr of coursesToDelete) {
-        console.log(curr)
         await deleteCourse(curr['id']);
-        console.log(`Course with class number ${curr['class_number']} has been removed.`);
     }
     
-    await console.log(`Courses fetched for course name: ${course}`);
-
-    return newCourses;
+    console.log(`Courses fetched.`);
 }
 
-// FIX?
-export async function getCourseById(id: number): Promise<any[] | null> {
+export async function getCourseById(id: number): Promise<CourseInformation> {
     const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT * FROM courses c
-        LEFT JOIN course_enrollments ce ON c.id = ce.course_id
-        LEFT JOIN course_timeslots ct ON c.id = ct.course_id
-        WHERE c.id = ?`,
+        LEFT JOIN course_enrollments ce ON c.cid = ce.course_id
+        LEFT JOIN course_timeslots ct ON c.cid = ct.course_id
+        WHERE c.cid = ?`,
         [id]
     );
 
-    return rows as any[] | null;
+    const course = mapToCourseInformationDTO(rows)[0];
+    return course;
 }
 
-export async function getAllCoursesByCourseName(name: string): Promise<any[]> {
-    // ADD FILTERS AND SORT IN THE FUTURE
-
+export async function getAllCoursesByCourseName(name: string): Promise<CourseInformation> {
     const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT * FROM courses c
-        LEFT JOIN course_enrollments ce ON c.id = ce.course_id
-        LEFT JOIN course_timeslots ct ON c.id = ct.course_id
-        WHERE course_name = ?`,
-        [name]
+        LEFT JOIN course_enrollments ce ON c.cid = ce.course_id
+        LEFT JOIN course_timeslots ct ON c.cid = ct.course_id
+        WHERE course_name LIKE ?`,
+        [`%${name}%`]
     );
 
-    await console.log("ROWS fetched");
-
-    return rows as any[];
+    const courses = mapToCourseInformationDTO(rows)[0];
+    return courses;
 }
 
 export async function getInstructorsByCourseName(name: string): Promise<any[]> {
     const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT DISTINCT instructor FROM course_timeslots ct
-        JOIN courses c ON ct.course_id = c.id
-        WHERE course_name = ?`,
-        [name]
+        JOIN courses c ON ct.course_id = c.cid
+        WHERE course_name LIKE ?`,
+        [`%${name}%`]
     );
 
     return rows as any[];
@@ -275,7 +255,6 @@ export async function deleteCourse(id: number): Promise<boolean> {
     return result.affectedRows > 0;
 }
 
-// IDK BOUT THIS
 export async function deleteCourseByCourseName(name: string): Promise<boolean> {
     const [result] = await pool.query<ResultSetHeader>(
         `DELETE FROM courses

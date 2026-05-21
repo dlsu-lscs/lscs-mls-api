@@ -1,6 +1,6 @@
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import pool from 'config/db.js';
-import { User, CreateUser, UpdateUser } from 'dtos/user.dto.js';
+import { User, CreateUser, UpdateUser, mapToUserDTO } from 'dtos/user.dto.js';
 
 export async function createUser(data: CreateUser): Promise<User | null> {
     const {
@@ -14,7 +14,7 @@ export async function createUser(data: CreateUser): Promise<User | null> {
     const existingUser = await getUserByUserId(userId);
 
     if (existingUser) {
-        return existingUser;
+        return null;
     }
     
     const [result] = await pool.query<ResultSetHeader>(
@@ -33,17 +33,18 @@ export async function createUser(data: CreateUser): Promise<User | null> {
 
 export async function getAllUsers(): Promise<User[]> {
     const [rows] = await pool.query<RowDataPacket[]>(`SELECT * FROM users`);
-    return rows as User[];
+    const users = rows.map(row => mapToUserDTO(row))
+    return users as User[];
 }
 
 export async function getUserById(id: number): Promise<User | null> {
     const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT * FROM users
-        WHERE id = ?`, 
+        WHERE uid = ?`, 
         [id]
     );
     
-    return rows[0] as User | null;
+    return mapToUserDTO(rows[0]) as User | null;
 }
 
 export async function getUserByUserId(userId: string): Promise<User | null> {
@@ -53,7 +54,7 @@ export async function getUserByUserId(userId: string): Promise<User | null> {
         [userId]
     );
     
-    return rows[0] as User | null;
+    return mapToUserDTO(rows[0]) as User | null;
 }
 
 export async function updateUser(id: number, data: UpdateUser): Promise<User | null> {
@@ -71,7 +72,7 @@ export async function updateUser(id: number, data: UpdateUser): Promise<User | n
     const [result] = await pool.query<ResultSetHeader>(
         `UPDATE users
         SET given_name = ?, family_name = ?, picture_url = ?
-        WHERE id = ?`, [
+        WHERE uid = ?`, [
             givenName,
             familyName,
             pictureUrl, 
@@ -85,24 +86,10 @@ export async function updateUser(id: number, data: UpdateUser): Promise<User | n
     return getUserById(id);
 }
 
-export async function updateUserIdNumber(id: number, idNumber: string): Promise<string | null> {
-    const [result] = await pool.query<ResultSetHeader>(
-        `UPDATE users
-        SET id_number = ?
-        WHERE id = ?`,
-        [idNumber, id]
-    );
-
-    if (result.affectedRows === 0) {
-        return null;
-    }
-    return idNumber;
-}
-
 export async function deleteUser(id: number): Promise<boolean> {
     const [result] = await pool.query<ResultSetHeader>(
         `DELETE FROM users
-        WHERE id = ?`,
+        WHERE uid = ?`,
         [id]
     );
 

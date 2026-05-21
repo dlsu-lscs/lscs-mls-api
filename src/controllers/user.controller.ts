@@ -9,8 +9,7 @@ export async function createUser(req: Request, res: Response) {
         }
         res.status(201).json(user);
     } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: 'Error creating user.', error: err });
+        res.status(500).json({ message: 'Internal server error.' });
     }
 }
 
@@ -19,8 +18,7 @@ export async function getAllUsers(req: Request, res: Response) {
         const users = await UserService.getAllUsers();
         res.status(200).json(users);
     } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: 'Error fetching all users.', error: err });
+        res.status(500).json({ message: 'Internal server error.' });
     }
 }
 
@@ -38,8 +36,7 @@ export async function getUserById(req: Request, res: Response) {
         }
         res.status(200).json(user);
     } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: 'Error fetching user.', error: err });
+        res.status(500).json({ message: 'Internal server error.' });
     }
 }
 
@@ -62,28 +59,7 @@ export async function updateUser(req: Request, res: Response) {
         }
         res.status(200).json(user);
     } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: 'Error updating user.', error: err });
-    }
-}
-
-export async function updateUserIdNumber(req: Request, res: Response) {
-    try {
-        const id = Number(req.params.id);
-        const idNumber = req.body.idNumber;
-        if (isNaN(id) || !idNumber) {
-            return res.status(400).json({ message: 'Invalid id or idNumber.' });
-        }
-
-        const success = await UserService.updateUserIdNumber(id, idNumber);
-
-        if (!success) {
-            return res.status(404).json({ message: 'User not found.' });
-        }
-        res.status(200).json({ idNumber: idNumber })
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: 'Error updating user ID number.', error: err });
+        res.status(500).json({ message: 'Internal server error.' });
     }
 }
 
@@ -101,7 +77,6 @@ export async function deleteUser(req: Request, res: Response) {
         }
         res.status(200).json({ message: 'User deleted successfully.' })
     } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: 'Error deleting user.', error: err });
+        res.status(500).json({ message: 'Internal server error.' });
     }
 }
