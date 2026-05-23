@@ -4,11 +4,9 @@ import * as CourseService from 'services/course.service.js';
 export async function fetchCourses(req: Request, res: Response) {
     try {
         let part = Number(req.body.part);
-        if (!part || part < 1 || part > 4) {
-            part = 0;
-        }
+        let term = Number(req.body.term);
 
-        const courses = await CourseService.fetchCourses(part);
+        const courses = await CourseService.fetchCourses(part, term);
         return res.status(200).json({ message: 'Courses fetched successfully.' });
     } catch (err: any) {
         if (["Parsing error", "OTP", "Fetch", "Login"].includes(err.message)) {

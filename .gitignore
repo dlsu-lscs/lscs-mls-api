@@ -16,3 +16,5 @@ pnpm-debug.log*
 
 # Other
 **/ah-cookies.json
+captcha.png
+eng.traineddata
