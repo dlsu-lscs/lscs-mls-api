@@ -128,13 +128,13 @@ export async function updateCourse(
     })
 }
 
-export async function fetchCourses(part: number = 0): Promise<void> {
+export async function fetchCourses(part: number = 0, term: number = 0): Promise<void> {
     // Runs the python script
-    while (!isValidSession()) {
+    while (!await isValidSession()) {
         await login();
     }
     
-    const classes = await fetch(part);
+    const classes = await fetch(part, term);
 
     if (!classes) {
         throw new Error('Parsing error.');

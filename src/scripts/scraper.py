@@ -10,7 +10,8 @@ url3 = "https://archershub.dlsu.edu.ph/CourseFinder/GetCFData/"
 url4 = "https://archershub.dlsu.edu.ph/CourseFinder/GetScheduleData/"
 
 session_id = sys.argv[1]
-part = int(sys.argv[2])
+part = sys.argv[2]
+term = sys.argv[3]
 
 # GET COOKIES FROM AH
 cookies = {
@@ -29,17 +30,29 @@ fetch_sessions = r.post(url, headers=headers, cookies=cookies)
 sessions = fetch_sessions.json()
 campuses = { item['CAMPUSNAME']: item['CAMPUSNO'] for item in sessions['CampusDrp'] }
 current_term = next(item for item in sessions['SessionDrp'] if item['IS_CURRENT_SESSION'] == True)
+other_terms = [item for item in sessions['SessionDrp'] if 'AY' in item['ACADEMIC_SESSION_NAME'] and item != current_term]
+other_terms.sort(reverse=True, key=lambda x: x['ACADEMIC_SESSION_NAME'])
 
 #####################################################################################################################################################################################################
 
-current_term_name = current_term['ACADEMIC_SESSION_NAME']
-current_term_no = current_term['ACADEMIC_SESSION_ID']
+if term > 0 and term <= len(other_terms):
+    chosen_term_name = other_terms[term - 1]['ACADEMIC_SESSION_NAME']
+    chosen_term_no = other_terms[term - 1]['ACADEMIC_SESSION_ID']
+else:
+    chosen_term_name = current_term['ACADEMIC_SESSION_NAME']
+    chosen_term_no = current_term['ACADEMIC_SESSION_ID']
 
-selected_campus = 'Manila'
+match part:
+    case -1:
+        selected_campus = 'Laguna'
+    case -2: 
+        selected_campus = 'Rufino'
+    case _:
+        selected_campus = 'Manila'
 
 payload = {
     "Campusno": campuses.get(selected_campus),
-    "AcademicSession": current_term_no
+    "AcademicSession": chosen_term_no
 }
 
 # Fetches list of courses offered for the selected term
@@ -103,7 +116,6 @@ while i < end:
     fetch_class_schedules = r.post(url4, json=payload_classes, headers=headers, cookies=cookies)
     course_class_schedules = fetch_class_schedules.json()
     class_schedules.extend(course_class_schedules)
-
     i += 25
 
 #####################################################################################################################################################################################################
@@ -135,7 +147,7 @@ for item in classes:
         "courseId": course_id,
         "courseName": item["SUBJECT_NAME"],
         "section": item["SECTION_NAME"],
-        "term": current_term_name
+        "term": chosen_term_name
     })
 
     course_enrollments.append({
