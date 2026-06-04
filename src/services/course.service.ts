@@ -156,7 +156,7 @@ export async function fetchCourses(part: number = 0, term: number = 0): Promise<
     
     let existingCourses: CourseInformation[] = [];
     let currentCourseName: string;
-    const processedClasses = new Set<{ courseName: string, section: string }>();
+    const processedClasses = new Set<string>();
 
     // Main iteration for adding/updating courses
     const updatePromises = courses.map(async (curr: any, index: number) => {
@@ -165,16 +165,16 @@ export async function fetchCourses(part: number = 0, term: number = 0): Promise<
             section: curr['section']
         };
 
-        processedClasses.add(currClass);
+        processedClasses.add(`${currClass.courseName}|${currClass.section}`);
 
         if (currClass['courseName'] !== currentCourseName) {
             currentCourseName = currClass['courseName'];
             let fetchedCourses = await getAllCoursesByCourseName(currentCourseName);
-            existingCourses.push(fetchedCourses);
+            if (fetchedCourses) existingCourses.push(fetchedCourses);
         }
-        
+
         // Checks if this class exists in our DB fetch
-        const existingSimilarCourse = existingCourses.find((c: CourseInformation) => 
+        const existingSimilarCourse = existingCourses.find((c: CourseInformation) =>
             c['courseName'] === currClass['courseName']
             && c['section'] === currClass['section']
         );
@@ -206,10 +206,9 @@ export async function fetchCourses(part: number = 0, term: number = 0): Promise<
     await Promise.all(updatePromises);
 
     // Filters out courses that were not processed (i.e., removed courses)
-    const coursesToDelete = existingCourses.filter((c: any) => !processedClasses.has({
-        courseName: c['courseName'],
-        section: c['section']
-    }));
+    const coursesToDelete = existingCourses.filter((c: any) =>
+        !processedClasses.has(`${c['courseName']}|${c['section']}`)
+    );
 
     // Deletes courses that were not present in the latest fetch
     for (const curr of coursesToDelete) {

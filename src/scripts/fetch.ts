@@ -61,28 +61,29 @@ export async function fetch(part: number = 0, term: number = 0): Promise<any[] |
       .then(() => console.log('Login successful. Fetching courses.'));
   } catch (e) {
     console.error("Cookies have expired. Running login.");
-    return null;
-  } finally {
     await browser.close();
+    return null;
   }
+
+  await browser.close();
 
   let sessionId = cookiesObj["ASP.NET_SessionId"];
 
   const pythonBin = process.platform === 'win32' ? 'python' : 'python3';
-  const result = spawnSync(pythonBin, ['./scraper.py', sessionId, part, term], { encoding: 'utf-8' });
+  const result = spawnSync(pythonBin, ['./src/scripts/scraper.py', sessionId, part, term], { encoding: 'utf-8' });
 
   if (result.error) {
     console.error('Error parsing: ' + result.error.message);
     return null;
   }
 
-  console.log("Course fetching successful. Rewriting cookies.")
+  if (result.status !== 0 || !result.stdout.trim()) {
+    console.error('Scraper exited with code', result.status);
+    console.error('stderr:', result.stderr);
+    return null;
+  }
 
-  // Rewriting the cookies just in case
-  const updatedCookies = await browser.cookies();
-  fs.writeFileSync('./ah-cookies.json', JSON.stringify(updatedCookies, null, 2));
-
-  console.log("Cookies saved to ah-cookies.json.");
+  console.log("Course fetching successful.");
 
   return JSON.parse(result.stdout.trim());
 }

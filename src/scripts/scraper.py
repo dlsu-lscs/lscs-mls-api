@@ -10,8 +10,8 @@ url3 = "https://archershub.dlsu.edu.ph/CourseFinder/GetCFData/"
 url4 = "https://archershub.dlsu.edu.ph/CourseFinder/GetScheduleData/"
 
 session_id = sys.argv[1]
-part = sys.argv[2]
-term = sys.argv[3]
+part = int(sys.argv[2])
+term = int(sys.argv[3])
 
 # GET COOKIES FROM AH
 cookies = {
