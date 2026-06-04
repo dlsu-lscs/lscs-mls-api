@@ -13,6 +13,7 @@ export async function createCourse(
     timeslotData: CreateCourseTimeslot[]
 ): Promise<void> {
     const {
+        classNumber,
         courseName,
         section,
         modality,
@@ -20,8 +21,9 @@ export async function createCourse(
     } = courseData;
 
     const [resultCourse] = await pool.query<ResultSetHeader>(
-        `INSERT INTO courses (course_name, section, modality, term)
-        VALUES (?, ?, ?, ?)`, [
+        `INSERT INTO courses (class_number, course_name, section, modality, term)
+        VALUES (?, ?, ?, ?, ?)`, [
+            classNumber,
             courseName,
             section,
             modality,
@@ -73,6 +75,7 @@ export async function updateCourse(
     newTimeslotData: UpdateCourseTimeslot[]
 ): Promise<void> {
     const {
+        classNumber,
         courseName,
         section,
         modality,
@@ -81,8 +84,9 @@ export async function updateCourse(
 
     await pool.query<ResultSetHeader>(
         `UPDATE courses
-        SET course_name = ?, section = ?, modality = ?, term = ?
+        SET class_number = ?, course_name = ?, section = ?, modality = ?, term = ?
         WHERE cid = ?`, [
+            classNumber,
             courseName,
             section,
             modality,
@@ -130,8 +134,15 @@ export async function updateCourse(
 
 export async function fetchCourses(part: number = 0, term: number = 0): Promise<void> {
     // Runs the python script
+    let loginAttempts = 0;
     while (!await isValidSession()) {
-        await login();
+        if (loginAttempts++ >= 3) throw new Error('Login');
+        try {
+            await login();
+        } catch (e: any) {
+            console.error('Login attempt failed:', e.message);
+            throw new Error('Login');
+        }
     }
     
     const classes = await fetch(part, term);
@@ -248,7 +259,7 @@ export async function getInstructorsByCourseName(name: string): Promise<any[]> {
 export async function deleteCourse(id: number): Promise<boolean> {
     const [result] = await pool.query<ResultSetHeader>(
         `DELETE FROM courses
-        WHERE id = ?`,
+        WHERE cid = ?`,
         [id]
     ); 
 

@@ -10,74 +10,55 @@ const puppeteer = addExtra(vanillaPuppeteer as any);
 puppeteer.use(StealthPlugin());
 
 export async function isValidSession(): Promise<boolean> {
-  let cookiesObj;
-
-  const browser = await puppeteer.launch({ 
-    headless: true 
-  });
-  
-  const page = await browser.newPage();
-  page.setDefaultTimeout(600000);
-
-  // Checks if the cookies file exists
+  // File checks — no browser needed for these
   if (!fs.existsSync('./ah-cookies.json')) {
     console.log("No cookie file found. Running login.");
-    await browser.close();
     return false;
   }
 
-  // Checks if ah-cookies.json is empty; if not, reads cookies
   const cookiesString: string = fs.readFileSync('./ah-cookies.json').toString();
   if (cookiesString.trim() === "") {
     console.log("No cookies found. Running login.");
-    await browser.close();
     return false;
   }
-  
-  const cookies = JSON.parse(cookiesString);
 
-  // Checks if the session id exists
+  const cookies = JSON.parse(cookiesString);
   if (!cookies.find((item: any) => item.name === "ASP.NET_SessionId")) {
     console.log("Session ID not found. Running login.");
-    await browser.close();
     return false;
   }
-  
-  cookiesObj = Object.fromEntries(
-    cookies.map((item: any) => [item.name, item.value])
-  );
-  
-  // Injects them into the browser before opening AH
-  await browser.setCookie(...cookies);
-  console.log("ArchersHub Opened. Session cookies injected.");
-  
-  // Navigates to AH for instant log in (if cookies are still active).
-  await page.goto('https://archershub.dlsu.edu.ph/StudentDashboard', { 
-    waitUntil: 'networkidle2' 
-  });
-  
+
+  // Only launch browser if cookie file looks valid
+  const browser = await puppeteer.launch({ headless: false });
+  const page = await browser.newPage();
+  page.setDefaultTimeout(600000);
+
   try {
-    await page
-      .waitForSelector('#SPInsName', { timeout: 10000 })
-      .then(() => console.log('Session is valid.'));
+    await browser.setCookie(...cookies);
+    console.log("ArchersHub Opened. Session cookies injected.");
+
+    await page.goto('https://archershub.dlsu.edu.ph/StudentDashboard', {
+      waitUntil: 'networkidle2'
+    });
+
+    await page.waitForSelector('#SPInsName', { timeout: 10000 });
+    console.log('Session is valid.');
+    return true;
   } catch (e) {
     console.error("Cookies have expired. Running login.");
     return false;
   } finally {
     await browser.close();
   }
-
-  return true;
 }
 
 export async function login() {
   const browser = await puppeteer.launch({
-    headless: true
+    headless: false
   });
 
   const page = await browser.newPage();
   await page.setDefaultTimeout(600000);
-  
   await page.goto('https://archershub.dlsu.edu.ph');
 
   try {
@@ -95,7 +76,7 @@ export async function login() {
     await page.type('#txtpassword', process.env.AH_PASSWORD as string, { delay: 100 });
 
     // Identifies captcha image and performs OCR
-    const element = await page.$('#CaptchaImageLogin');
+    const element = await page.$('#captchaImageLogin');
     await element?.screenshot({ path: 'captcha.png' });
 
     const worker = await createWorker('eng');
@@ -118,6 +99,7 @@ export async function login() {
     await page.type('#txtTwoStepOTP', otp, { delay: 100 });
     await page.click('#btnTwoStepVerifyOTP');
 
+    await page.setViewport({ width: 1920, height: 1080 });
     await page.waitForSelector('#SPInsName', { visible: true, timeout: 15000 });
     
     console.log("Logging in to ArchersHub.");
@@ -129,10 +111,10 @@ export async function login() {
     // Extracts browser cookies
     const cookies = await browser.cookies();
     fs.writeFileSync('./ah-cookies.json', JSON.stringify(cookies, null, 2));
-    
+
     console.log("Cookies saved to ah-cookies.json.");
   } catch (e: any) {
-    return;
+    throw e;
   } finally {
     await browser.close();
   }
