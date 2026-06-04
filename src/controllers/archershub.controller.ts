@@ -26,3 +26,23 @@ export async function getTerms(req: Request, res: Response) {
         }
     }
 }
+
+export async function getCourseList(req: Request, res: Response) {
+    try {
+        const campusNo = req.query.campusNo as string;
+        const sessionId = req.query.sessionId as string;
+
+        if (!campusNo || !sessionId) {
+            return res.status(400).json({ message: 'campusNo and sessionId are required.' });
+        }
+
+        const courses = await ArchersHubService.getCourseList(campusNo, sessionId);
+        res.status(200).json(courses);
+    } catch (err: any) {
+        if (['No cookie file found.', 'No cookies found.', 'Session ID not found.'].includes(err.message)) {
+            res.status(401).json({ message: 'No active session. Run /courses/fetch to authenticate.' });
+        } else {
+            res.status(500).json({ message: 'Internal server error.' });
+        }
+    }
+}
