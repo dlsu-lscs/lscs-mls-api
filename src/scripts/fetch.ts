@@ -68,20 +68,21 @@ export async function fetch(part: number = 0, term: number = 0): Promise<any[] |
 
   let sessionId = cookiesObj["ASP.NET_SessionId"];
 
-  const process = spawnSync('python3', ['./scraper.py', sessionId, part, term], { encoding: 'utf-8' });
+  const pythonBin = process.platform === 'win32' ? 'python' : 'python3';
+  const result = spawnSync(pythonBin, ['./scraper.py', sessionId, part, term], { encoding: 'utf-8' });
 
-  if (process.error) {
-    console.error('Error parsing: ' + process.error.message);
+  if (result.error) {
+    console.error('Error parsing: ' + result.error.message);
     return null;
   }
 
   console.log("Course fetching successful. Rewriting cookies.")
 
-  // Rewriting the cookies just in case 
+  // Rewriting the cookies just in case
   const updatedCookies = await browser.cookies();
   fs.writeFileSync('./ah-cookies.json', JSON.stringify(updatedCookies, null, 2));
 
   console.log("Cookies saved to ah-cookies.json.");
 
-  return JSON.parse(process.stdout.trim());
+  return JSON.parse(result.stdout.trim());
 }
