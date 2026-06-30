@@ -9,7 +9,7 @@ function getSessionId(): string {
     if (!raw) throw new Error('No cookies found.');
 
     const cookies = JSON.parse(raw);
-    const session = cookies.find((c: any) => c.name === 'ASP.NET_SessionId');
+    const session = cookies.find((c: any) => c.name === '__Secure-SID');
     if (!session) throw new Error('Session ID not found.');
     return session.value;
 }
@@ -18,7 +18,7 @@ function getHeaders(sessionId: string) {
     return {
         'Accept': '*/*',
         'X-Requested-With': 'XMLHttpRequest',
-        'Cookie': `ASP.NET_SessionId=${sessionId}`,
+        'Cookie': `__Secure-SID=${sessionId}`,
     };
 }
 

@@ -23,13 +23,16 @@ export async function isValidSession(): Promise<boolean> {
   }
 
   const cookies = JSON.parse(cookiesString);
-  if (!cookies.find((item: any) => item.name === "ASP.NET_SessionId")) {
+  if (!cookies.find((item: any) => item.name === "__Secure-SID")) {
     console.log("Session ID not found. Running login.");
     return false;
   }
 
   // Only launch browser if cookie file looks valid
-  const browser = await puppeteer.launch({ headless: false });
+  const browser = await puppeteer.launch({ 
+    headless: true
+  });
+  
   const page = await browser.newPage();
   page.setDefaultTimeout(600000);
 
@@ -54,7 +57,7 @@ export async function isValidSession(): Promise<boolean> {
 
 export async function login() {
   const browser = await puppeteer.launch({
-    headless: false
+    headless: true
   });
 
   const page = await browser.newPage();
