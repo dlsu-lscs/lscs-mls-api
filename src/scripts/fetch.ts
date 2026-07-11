@@ -61,9 +61,8 @@ export async function fetch(part: number = 0, term: number = 0): Promise<any[] |
       .then(() => console.log('Login successful. Fetching courses.'));
   } catch (e) {
     console.error("Cookies have expired. Running login.");
-    return null;
-  } finally {
     await browser.close();
+    return null;
   }
 
   let sessionId = cookiesObj["__Secure-SID"];

@@ -12,6 +12,7 @@ export async function fetchCourses(req: Request, res: Response) {
         await CourseService.fetchCourses(part, term);
         return res.status(200).json({ message: 'Courses fetched successfully.' });
     } catch (err: any) {
+        console.error('fetchCourses error:', err);
         if (["Parsing error", "OTP", "Fetch", "Login"].includes(err.message)) {
             res.status(400).json({ message: err });
         } else {
