@@ -5,7 +5,7 @@ export async function getCampuses(req: Request, res: Response) {
     try {
         const campuses = await ArchersHubService.getCampuses();
         res.status(200).json(campuses);
-    } catch (err: any) {
+    } catch (err as Error) {
         if (['No cookie file found.', 'No cookies found.', 'Session ID not found.'].includes(err.message)) {
             res.status(401).json({ message: 'No active session. Run /courses/fetch to authenticate.' });
         } else {
@@ -42,7 +42,7 @@ export async function getCourseList(req: Request, res: Response) {
         if (['No cookie file found.', 'No cookies found.', 'Session ID not found.'].includes(err.message)) {
             res.status(401).json({ message: 'No active session. Run /courses/fetch to authenticate.' });
         } else {
-            res.status(500).json({ message: 'Internal server error.' });
+            res.status(500).json({ message: 'Internal server error.' + err });
         }
     }
 }

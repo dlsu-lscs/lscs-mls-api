@@ -13,21 +13,21 @@ export async function createCourse(
     timeslotData: CreateCourseTimeslot[]
 ): Promise<void> {
     const {
-        classNumber,
         courseName,
         section,
         modality,
-        term
+        term,
+        campus
     } = courseData;
 
     const [resultCourse] = await pool.query<ResultSetHeader>(
-        `INSERT INTO courses (class_number, course_name, section, modality, term)
+        `INSERT INTO courses (course_name, section, modality, term, campus)
         VALUES (?, ?, ?, ?, ?)`, [
-            classNumber,
             courseName,
             section,
             modality,
-            term
+            term,
+            campus
         ]
     );
 
@@ -75,22 +75,22 @@ export async function updateCourse(
     newTimeslotData: UpdateCourseTimeslot[]
 ): Promise<void> {
     const {
-        classNumber,
         courseName,
         section,
         modality,
-        term
+        term,
+        campus
     } = newCourseData;
 
     await pool.query<ResultSetHeader>(
         `UPDATE courses
-        SET class_number = ?, course_name = ?, section = ?, modality = ?, term = ?
+        SET course_name = ?, section = ?, modality = ?, term = ?, campus = ?
         WHERE cid = ?`, [
-            classNumber,
             courseName,
             section,
             modality,
             term,
+            campus,
             courseId
         ]
     );
@@ -140,7 +140,7 @@ export async function fetchCourses(part: number = 0, term: number = 0): Promise<
         try {
             await login();
         } catch (e: any) {
-            console.error('Login attempt failed:', e.message);
+            console.error('Login attempt failed:', e);
             throw new Error('Login');
         }
     }
@@ -154,6 +154,8 @@ export async function fetchCourses(part: number = 0, term: number = 0): Promise<
     // Parses the output from the script
     const [courses, timeslots, enrollments] = classes;
     
+    console.log(`Courses: ${courses.length} | Timeslots: ${timeslots.length} | ${enrollments.length}`)
+
     let existingCourses: CourseInformation[] = [];
     let currentCourseName: string;
     const processedClasses = new Set<{ courseName: string, section: string }>();

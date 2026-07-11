@@ -68,21 +68,17 @@ export async function fetch(part: number = 0, term: number = 0): Promise<any[] |
 
   let sessionId = cookiesObj["__Secure-SID"];
 
-  const process = spawnSync('python3', ['./src/scripts/scraper.py', sessionId, part, term], { encoding: 'utf-8' });
-  console.log(process)
+  const process = spawnSync('python3', ['./src/scripts/scraper.py', sessionId, part, term], { 
+    encoding: 'utf-8',
+    maxBuffer: 1024 * 1024 * 1000
+  });
 
   if (process.error) {
     console.error('Error parsing: ' + process.error.message);
     return null;
   }
 
-  console.log("Course fetching successful. Rewriting cookies.")
-
-  // Rewriting the cookies just in case 
-  const updatedCookies = await browser.cookies();
-  fs.writeFileSync('./ah-cookies.json', JSON.stringify(updatedCookies, null, 2));
-
-  console.log("Cookies saved to ah-cookies.json.");
+  console.log("Course fetching successful.");
 
   return JSON.parse(process.stdout.trim());
 }

@@ -6,13 +6,16 @@ export async function fetchCourses(req: Request, res: Response) {
         let part = Number(req.body.part);
         let term = Number(req.body.term);
 
-        const courses = await CourseService.fetchCourses(part, term);
+        if (!part) part = 0; 
+        if (!term) term = 0; 
+
+        await CourseService.fetchCourses(part, term);
         return res.status(200).json({ message: 'Courses fetched successfully.' });
     } catch (err: any) {
         if (["Parsing error", "OTP", "Fetch", "Login"].includes(err.message)) {
-            res.status(400).json({ message: err.message });
+            res.status(400).json({ message: err });
         } else {
-            res.status(500).json({ message: 'Internal server error.' });
+            res.status(500).json({ message: 'Internal server error.', err });
         }
     }
 }
