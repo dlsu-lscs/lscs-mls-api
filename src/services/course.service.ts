@@ -132,7 +132,11 @@ export async function updateCourse(
     })
 }
 
-export async function fetchCourses(part: number = 0, term: number = 0): Promise<void> {
+export async function fetchCourses(
+  campus: number = 0,
+  part: number = 0, 
+  term: number = 0
+): Promise<void> {
     // Runs the python script
     let loginAttempts = 0;
     while (!await isValidSession()) {
@@ -144,8 +148,8 @@ export async function fetchCourses(part: number = 0, term: number = 0): Promise<
             throw new Error('Login');
         }
     }
-    
-    const classes = await fetch(part, term);
+
+    const classes = await fetch(campus, part, term);
 
     if (!classes) {
         throw new Error('Parsing error.');
@@ -172,7 +176,7 @@ export async function fetchCourses(part: number = 0, term: number = 0): Promise<
         if (currClass['courseName'] !== currentCourseName) {
             currentCourseName = currClass['courseName'];
             let fetchedCourses = await getAllCoursesByCourseName(currentCourseName);
-            if (fetchedCourses) existingCourses.push(fetchedCourses);
+            if (fetchedCourses) existingCourses.push(...fetchedCourses);
         }
 
         // Checks if this class exists in our DB fetch
@@ -233,7 +237,7 @@ export async function getCourseById(id: number): Promise<CourseInformation> {
     return course;
 }
 
-export async function getAllCoursesByCourseName(name: string): Promise<CourseInformation> {
+export async function getAllCoursesByCourseName(name: string): Promise<CourseInformation[]> {
     const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT * FROM courses c
         LEFT JOIN course_enrollments ce ON c.cid = ce.course_id
@@ -242,7 +246,7 @@ export async function getAllCoursesByCourseName(name: string): Promise<CourseInf
         [`%${name}%`]
     );
 
-    const courses = mapToCourseInformationDTO(rows)[0];
+    const courses = mapToCourseInformationDTO(rows);
     return courses;
 }
 

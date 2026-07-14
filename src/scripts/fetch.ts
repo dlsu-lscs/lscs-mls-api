@@ -8,7 +8,11 @@ const puppeteer = addExtra(vanillaPuppeteer as any);
 
 puppeteer.use(StealthPlugin());
 
-export async function fetch(part: number = 0, term: number = 0): Promise<any[] | null> {
+export async function fetch(
+  campus: number = 0, 
+  part: number = 0, 
+  term: number = 0
+): Promise<any[] | null> {
   let cookiesObj;
 
   const browser = await puppeteer.launch({ 
@@ -67,7 +71,7 @@ export async function fetch(part: number = 0, term: number = 0): Promise<any[] |
 
   let sessionId = cookiesObj["__Secure-SID"];
 
-  const process = spawnSync('python3', ['./src/scripts/scraper.py', sessionId, part, term], { 
+  const process = spawnSync('python3', ['./src/scripts/scraper.py', sessionId, campus, part, term], { 
     encoding: 'utf-8',
     maxBuffer: 1024 * 1024 * 1000
   });

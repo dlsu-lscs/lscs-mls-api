@@ -12,8 +12,9 @@ url3 = "https://archershub.dlsu.edu.ph/CourseFinder/GetCFData/"
 url4 = "https://archershub.dlsu.edu.ph/CourseFinder/GetScheduleData/"
 
 session_id = sys.argv[1]
-part = int(sys.argv[2]) if sys.argv[2] else 0
-term = int(sys.argv[3]) if sys.argv[3] else 0
+campus = int(sys.argv[2]) if sys.argv[2] else 0
+part = int(sys.argv[3]) if sys.argv[3] else 0
+term = int(sys.argv[4]) if sys.argv[4] else 0
 
 # GET COOKIES FROM AH
 cookies = {
@@ -44,10 +45,10 @@ else:
     chosen_term_name = current_term['ACADEMIC_SESSION_NAME']
     chosen_term_no = current_term['ACADEMIC_SESSION_ID']
 
-match part:
-    case -1:
+match campus:
+    case 1:
         selected_campus = 'Laguna'
-    case -2: 
+    case 2: 
         selected_campus = 'Rufino'
     case _:
         selected_campus = 'Manila'
@@ -101,7 +102,7 @@ while i < end:
 
     enlistmentSchedule = []
 
-    for item in course_classes:
+    for item in classes:
         enlistmentSchedule.append({
             'COURSE_CREATION_ID': item['COURSE_CREATION_ID'],
             'SECTION_CREATION_ID': item['SECTION_CREATION_ID'],
