@@ -17,7 +17,8 @@ export function mapToCourseInformationDTO(dbRows: any[]): CourseInformation[] {
 
             coursesMap.set(row.cid, {
                 ...course,
-                status: courseEnrollment
+                status: courseEnrollment,
+                timeslots: []
             });
         }
 

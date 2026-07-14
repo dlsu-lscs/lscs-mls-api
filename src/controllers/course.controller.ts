@@ -3,16 +3,22 @@ import * as CourseService from 'services/course.service.js';
 
 export async function fetchCourses(req: Request, res: Response) {
     try {
+        let campus = Number(req.body.campus);
         let part = Number(req.body.part);
         let term = Number(req.body.term);
 
-        const courses = await CourseService.fetchCourses(part, term);
+        if (!campus) campus = 0; 
+        if (!part) part = 0; 
+        if (!term) term = 0; 
+
+        await CourseService.fetchCourses(campus, part, term);
         return res.status(200).json({ message: 'Courses fetched successfully.' });
     } catch (err: any) {
+        console.error('fetchCourses error:', err);
         if (["Parsing error", "OTP", "Fetch", "Login"].includes(err.message)) {
-            res.status(400).json({ message: err.message });
+            res.status(400).json({ message: err });
         } else {
-            res.status(500).json({ message: 'Internal server error.' });
+            res.status(500).json({ message: 'Internal server error.', err });
         }
     }
 }

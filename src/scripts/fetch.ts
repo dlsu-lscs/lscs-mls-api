@@ -8,7 +8,11 @@ const puppeteer = addExtra(vanillaPuppeteer as any);
 
 puppeteer.use(StealthPlugin());
 
-export async function fetch(part: number = 0, term: number = 0): Promise<any[] | null> {
+export async function fetch(
+  campus: number = 0, 
+  part: number = 0, 
+  term: number = 0
+): Promise<any[] | null> {
   let cookiesObj;
 
   const browser = await puppeteer.launch({ 
@@ -36,7 +40,7 @@ export async function fetch(part: number = 0, term: number = 0): Promise<any[] |
   const cookies = JSON.parse(cookiesString);
 
   // Checks if the session id exists
-  if (!cookies.find((item: any) => item.name === "ASP.NET_SessionId")) {
+  if (!cookies.find((item: any) => item.name === "__Secure-SID")) {
     console.log("Session ID not found.");
     await browser.close();
     return null;
@@ -61,27 +65,23 @@ export async function fetch(part: number = 0, term: number = 0): Promise<any[] |
       .then(() => console.log('Login successful. Fetching courses.'));
   } catch (e) {
     console.error("Cookies have expired. Running login.");
-    return null;
-  } finally {
     await browser.close();
+    return null;
   }
 
-  let sessionId = cookiesObj["ASP.NET_SessionId"];
+  let sessionId = cookiesObj["__Secure-SID"];
 
-  const process = spawnSync('python3', ['./scraper.py', sessionId, part, term], { encoding: 'utf-8' });
+  const process = spawnSync('python3', ['./src/scripts/scraper.py', sessionId, campus, part, term], { 
+    encoding: 'utf-8',
+    maxBuffer: 1024 * 1024 * 1000
+  });
 
   if (process.error) {
     console.error('Error parsing: ' + process.error.message);
     return null;
   }
 
-  console.log("Course fetching successful. Rewriting cookies.")
-
-  // Rewriting the cookies just in case 
-  const updatedCookies = await browser.cookies();
-  fs.writeFileSync('./ah-cookies.json', JSON.stringify(updatedCookies, null, 2));
-
-  console.log("Cookies saved to ah-cookies.json.");
+  console.log("Course fetching successful.");
 
   return JSON.parse(process.stdout.trim());
 }

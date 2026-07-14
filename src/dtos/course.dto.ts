@@ -3,24 +3,25 @@ export interface Course {
     courseName: string,
     section: string,
     modality?: string
-    term?: string
+    term?: string,
+    campus?: string
 }
 
 export interface CreateCourse {
-    classNumber: number,
     courseName: string,
     section: string,
     modality?: string
-    term?: string
+    term?: string,
+    campus?: string
 }
 
 export interface UpdateCourse {
     courseId: number,
-    classNumber?: number,
     courseName?: string,
     section?: string,
     modality?: string
-    term?: string
+    term?: string,
+    campus?: string
 }
 
 export function mapToCourseDTO(dbRow: any): Course | null {
@@ -33,6 +34,7 @@ export function mapToCourseDTO(dbRow: any): Course | null {
         courseName: dbRow.course_name,
         section: dbRow.section,
         modality: dbRow.modality,
-        term: dbRow.term
+        term: dbRow.term,
+        campus: dbRow.campus
     };
 }

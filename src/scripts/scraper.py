@@ -2,6 +2,8 @@ import requests
 import json
 from datetime import timedelta, datetime
 import sys
+import copy
+import time
 
 # URL FOR TERM/CAMPUS SELECTION, COURSE LIST, AND CLASS LIST
 url = "https://archershub.dlsu.edu.ph/CourseFinder/GetAllDropDownList"
@@ -10,12 +12,13 @@ url3 = "https://archershub.dlsu.edu.ph/CourseFinder/GetCFData/"
 url4 = "https://archershub.dlsu.edu.ph/CourseFinder/GetScheduleData/"
 
 session_id = sys.argv[1]
-part = sys.argv[2]
-term = sys.argv[3]
+campus = int(sys.argv[2]) if sys.argv[2] else 0
+part = int(sys.argv[3]) if sys.argv[3] else 0
+term = int(sys.argv[4]) if sys.argv[4] else 0
 
 # GET COOKIES FROM AH
 cookies = {
-    "ASP.NET_SessionId": session_id,
+    "__Secure-SID": session_id,
 }
 
 headers = {
@@ -29,7 +32,7 @@ r = requests.Session()
 fetch_sessions = r.post(url, headers=headers, cookies=cookies)
 sessions = fetch_sessions.json()
 campuses = { item['CAMPUSNAME']: item['CAMPUSNO'] for item in sessions['CampusDrp'] }
-current_term = next(item for item in sessions['SessionDrp'] if item['IS_CURRENT_SESSION'] == True)
+current_term = next((item for item in sessions['SessionDrp'] if item['IS_CURRENT_SESSION'] == True), sessions['SessionDrp'][0])
 other_terms = [item for item in sessions['SessionDrp'] if 'AY' in item['ACADEMIC_SESSION_NAME'] and item != current_term]
 other_terms.sort(reverse=True, key=lambda x: x['ACADEMIC_SESSION_NAME'])
 
@@ -42,10 +45,10 @@ else:
     chosen_term_name = current_term['ACADEMIC_SESSION_NAME']
     chosen_term_no = current_term['ACADEMIC_SESSION_ID']
 
-match part:
-    case -1:
+match campus:
+    case 1:
         selected_campus = 'Laguna'
-    case -2: 
+    case 2: 
         selected_campus = 'Rufino'
     case _:
         selected_campus = 'Manila'
@@ -95,10 +98,11 @@ while i < end:
         fetch_classes = r.post(url3, json=payload, headers=headers, cookies=cookies)
         course_classes.extend(fetch_classes.json())
         classes.extend(course_classes)
+        time.sleep(0.5)
 
     enlistmentSchedule = []
 
-    for item in course_classes:
+    for item in classes:
         enlistmentSchedule.append({
             'COURSE_CREATION_ID': item['COURSE_CREATION_ID'],
             'SECTION_CREATION_ID': item['SECTION_CREATION_ID'],
@@ -113,10 +117,12 @@ while i < end:
     }
 
     # Fetches class schedules per offering
+
     fetch_class_schedules = r.post(url4, json=payload_classes, headers=headers, cookies=cookies)
     course_class_schedules = fetch_class_schedules.json()
     class_schedules.extend(course_class_schedules)
     i += 25
+    time.sleep(0.5)
 
 #####################################################################################################################################################################################################
 
@@ -147,7 +153,8 @@ for item in classes:
         "courseId": course_id,
         "courseName": item["SUBJECT_NAME"],
         "section": item["SECTION_NAME"],
-        "term": chosen_term_name
+        "term": chosen_term_name,
+        "campus": selected_campus
     })
 
     course_enrollments.append({
@@ -157,7 +164,7 @@ for item in classes:
     })
 
 class_sessions = { item: 0 for item in course_dict.keys() }
-class_online_sessions = class_sessions.copy()
+class_online_sessions = copy.deepcopy(class_sessions)
 
 # Parses course schedules
 for item in week_schedules:

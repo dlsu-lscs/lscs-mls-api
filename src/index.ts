@@ -4,6 +4,7 @@ import cors from 'cors';
 import userRouter from 'routes/user.routes.js';
 import courseRouter from 'routes/course.routes.js';
 import authRouter from 'routes/auth.routes.js';
+import archersHubRouter from 'routes/archershub.routes.js';
 
 dotenv.config();
 const app = express();
@@ -20,6 +21,7 @@ app.use(cors({
 app.use('/users', userRouter);
 app.use('/courses', courseRouter);
 app.use('/auth', authRouter);
+app.use('/', archersHubRouter);
 
 app.listen(port, () => {
     console.log(`mls-api is live on port http://${host}:${port}`);
