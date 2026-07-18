@@ -16,7 +16,7 @@ export async function fetch(
   let cookiesObj;
 
   const browser = await puppeteer.launch({ 
-    headless: true 
+    headless: false
   });
   
   const page = await browser.newPage();
@@ -75,6 +75,8 @@ export async function fetch(
     encoding: 'utf-8',
     maxBuffer: 1024 * 1024 * 1000
   });
+
+  console.log(process.stdout.trim())
 
   if (process.error) {
     console.error('Error parsing: ' + process.error.message);

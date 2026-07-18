@@ -149,7 +149,9 @@ export async function fetchCourses(
         }
     }
 
+    console.log('hit')
     const classes = await fetch(campus, part, term);
+
 
     if (!classes) {
         throw new Error('Parsing error.');
