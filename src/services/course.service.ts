@@ -149,9 +149,7 @@ export async function fetchCourses(
         }
     }
 
-    console.log('hit')
     const classes = await fetch(campus, part, term);
-
 
     if (!classes) {
         throw new Error('Parsing error.');
@@ -163,6 +161,7 @@ export async function fetchCourses(
     console.log(`Courses: ${courses.length} | Timeslots: ${timeslots.length} | ${enrollments.length}`)
 
     let existingCourses: CourseInformation[] = [];
+    let fetchedCourseNames: string[] = [];
     let currentCourseName: string;
     const processedClasses = new Set<string>();
 
@@ -173,12 +172,15 @@ export async function fetchCourses(
             section: curr['section']
         };
 
-        processedClasses.add(`${currClass.courseName}|${currClass.section}`);
+        processedClasses.add(`${currClass['courseName']}|${currClass['section']}`);
 
         if (currClass['courseName'] !== currentCourseName) {
             currentCourseName = currClass['courseName'];
-            let fetchedCourses = await getAllCoursesByCourseName(currentCourseName);
-            if (fetchedCourses) existingCourses.push(...fetchedCourses);
+            if (!fetchedCourseNames.includes(currentCourseName)) {
+              let fetchedCourses = await getAllCoursesByCourseName(currentCourseName);
+              if (fetchedCourses) existingCourses.push(...fetchedCourses);
+              fetchedCourseNames.push(currentCourseName);
+            }
         }
 
         // Checks if this class exists in our DB fetch

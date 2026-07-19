@@ -16,7 +16,7 @@ export async function fetch(
   let cookiesObj;
 
   const browser = await puppeteer.launch({ 
-    headless: false
+    headless: true
   });
   
   const page = await browser.newPage();
@@ -76,14 +76,17 @@ export async function fetch(
     maxBuffer: 1024 * 1024 * 1000
   });
 
-  console.log(process.stdout.trim())
-
   if (process.error) {
     console.error('Error parsing: ' + process.error.message);
     return null;
   }
 
-  console.log("Course fetching successful.");
+  console.log("Course fetching successful. Rewriting cookies.");
+
+  const newCookies = await browser.cookies();
+  fs.writeFileSync('./ah-cookies.json', JSON.stringify(newCookies, null, 2));
+
+  console.log("Cookies saved to ah-cookies.json.");
 
   return JSON.parse(process.stdout.trim());
 }

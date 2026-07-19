@@ -33,7 +33,7 @@ fetch_sessions = r.post(url, headers=headers, cookies=cookies)
 sessions = fetch_sessions.json()
 campuses = { item['CAMPUSNAME']: item['CAMPUSNO'] for item in sessions['CampusDrp'] }
 current_term = next((item for item in sessions['SessionDrp'] if item['IS_CURRENT_SESSION'] == True), sessions['SessionDrp'][0])
-other_terms = [item for item in sessions['SessionDrp'] if 'AY' in item['ACADEMIC_SESSION_NAME'] and item != current_term]
+other_terms = [item for item in sessions['SessionDrp']]
 other_terms.sort(reverse=True, key=lambda x: x['ACADEMIC_SESSION_NAME'])
 
 #####################################################################################################################################################################################################
