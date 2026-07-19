@@ -33,7 +33,7 @@ fetch_sessions = r.post(url, headers=headers, cookies=cookies)
 sessions = fetch_sessions.json()
 campuses = { item['CAMPUSNAME']: item['CAMPUSNO'] for item in sessions['CampusDrp'] }
 current_term = next((item for item in sessions['SessionDrp'] if item['IS_CURRENT_SESSION'] == True), sessions['SessionDrp'][0])
-other_terms = [item for item in sessions['SessionDrp'] if 'AY' in item['ACADEMIC_SESSION_NAME'] and item != current_term]
+other_terms = [item for item in sessions['SessionDrp']]
 other_terms.sort(reverse=True, key=lambda x: x['ACADEMIC_SESSION_NAME'])
 
 #####################################################################################################################################################################################################
@@ -88,21 +88,24 @@ match part:
 i = start
         
 while i < end:
-    course_classes = []
-    k = i + 25 if i + 25 <= end else end
+    k = min(i + 25, end)    
+    batch_classes = [] 
     
     for j in range(i, k):
         payload["Courseid"] = course_list[j]["COURSE_CREATION_ID"]
 
-        # Fetches offerings for selected course
-        fetch_classes = r.post(url3, json=payload, headers=headers, cookies=cookies)
-        course_classes.extend(fetch_classes.json())
-        classes.extend(course_classes)
+        response = r.post(url3, json=payload, headers=headers, cookies=cookies)
+        new_classes = response.json()
+        
+        batch_classes.extend(new_classes)
+        
+        classes.extend(new_classes) 
+        
         time.sleep(0.5)
 
     enlistmentSchedule = []
 
-    for item in classes:
+    for item in batch_classes: 
         enlistmentSchedule.append({
             'COURSE_CREATION_ID': item['COURSE_CREATION_ID'],
             'SECTION_CREATION_ID': item['SECTION_CREATION_ID'],
@@ -110,20 +113,20 @@ while i < end:
             'CAMPUSNO': payload['Campusno']
         })
 
-    # Payload for fetching class schedules
     payload_classes = {
         'ACADEMICSESSIONID': payload['AcademicSession'],
         'enlistmentSchedule': enlistmentSchedule
     }
 
-    # Fetches class schedules per offering
-
     fetch_class_schedules = r.post(url4, json=payload_classes, headers=headers, cookies=cookies)
-    course_class_schedules = fetch_class_schedules.json()
-    class_schedules.extend(course_class_schedules)
+    
+    if fetch_class_schedules.status_code == 200:
+        course_class_schedules = fetch_class_schedules.json()
+        class_schedules.extend(course_class_schedules)
+        
     i += 25
     time.sleep(0.5)
-
+  
 #####################################################################################################################################################################################################
 
 # Gets dates for the schedule

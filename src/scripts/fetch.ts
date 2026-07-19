@@ -16,7 +16,7 @@ export async function fetch(
   let cookiesObj;
 
   const browser = await puppeteer.launch({ 
-    headless: true 
+    headless: true
   });
   
   const page = await browser.newPage();
@@ -81,7 +81,12 @@ export async function fetch(
     return null;
   }
 
-  console.log("Course fetching successful.");
+  console.log("Course fetching successful. Rewriting cookies.");
+
+  const newCookies = await browser.cookies();
+  fs.writeFileSync('./ah-cookies.json', JSON.stringify(newCookies, null, 2));
+
+  console.log("Cookies saved to ah-cookies.json.");
 
   return JSON.parse(process.stdout.trim());
 }
