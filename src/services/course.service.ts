@@ -284,3 +284,33 @@ export async function deleteCourseByCourseName(name: string): Promise<boolean> {
 
     return result.affectedRows > 0;
 }
+
+export async function getUniqueCampuses(): Promise<string[]> {
+    const [rows] = await pool.query<RowDataPacket[]>(
+        `SELECT DISTINCT campus FROM courses
+        WHERE campus IS NOT NULL AND campus != ''
+        ORDER BY campus`
+    );
+
+    return rows.map((row) => row.campus);
+}
+
+export async function getUniqueTerms(): Promise<string[]> {
+    const [rows] = await pool.query<RowDataPacket[]>(
+        `SELECT DISTINCT term FROM courses
+        WHERE term IS NOT NULL AND term != ''
+        ORDER BY term`
+    );
+
+    return rows.map((row) => row.term);
+}
+
+export async function getCourseList(): Promise<string[]> {
+    const [rows] = await pool.query<RowDataPacket[]>(
+        `SELECT DISTINCT course_name FROM courses
+        WHERE course_name IS NOT NULL AND course_name != ''
+        ORDER BY course_name`
+    );
+
+    return rows.map((row) => row.course_name);
+}

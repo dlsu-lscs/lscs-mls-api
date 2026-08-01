@@ -59,3 +59,33 @@ export async function getAllCoursesByCourseName(req: Request, res: Response) {
         res.status(500).json({ message: 'Internal server error.' });
     }
 }
+
+export async function getCampuses(req: Request, res: Response) {
+    try {
+        const campuses = await CourseService.getUniqueCampuses();
+        res.status(200).json(campuses);
+    } catch (err) {
+        console.error('getCampuses error:', err);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+}
+
+export async function getTerms(req: Request, res: Response) {
+    try {
+        const terms = await CourseService.getUniqueTerms();
+        res.status(200).json(terms);
+    } catch (err) {
+        console.error('getTerms error:', err);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+}
+
+export async function getCourseList(req: Request, res: Response) {
+    try {
+        const courses = await CourseService.getCourseList();
+        res.status(200).json(courses);
+    } catch (err) {
+        console.error('getCourseList error:', err);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+}
