@@ -12,5 +12,14 @@ router.get('/search/:courseName', CourseController.getAllCoursesByCourseName);
 // Routes for the /courses/id/:id endpoint
 router.get('/id/:id', CourseController.getCourseById);
 
+// Routes for the /courses/campuses endpoint
+router.get('/campuses', CourseController.getCampuses);
+
+// Routes for the /courses/terms endpoint
+router.get('/terms', CourseController.getTerms);
+
+// Routes for the /courses/list endpoint
+router.get('/list', CourseController.getCourseList);
+
 
 export default router;
