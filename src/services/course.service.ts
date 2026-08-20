@@ -139,7 +139,8 @@ export async function updateCourse(
 export async function fetchCourses(
   campus: number = 0,
   part: number = 0, 
-  term: number = 0
+  term: number = 0,
+  course: string = ''
 ): Promise<void> {
     // Runs the python script
     let loginAttempts = 0;
@@ -153,7 +154,7 @@ export async function fetchCourses(
         }
     }
 
-    const classes = await fetch(campus, part, term);
+    const classes = await fetch(campus, part, term, course);
 
     if (!classes) {
         throw new Error('Parsing error.');

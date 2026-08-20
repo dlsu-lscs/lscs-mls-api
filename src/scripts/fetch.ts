@@ -24,7 +24,8 @@ const BROWSER_CONFIG = {
 export async function fetch(
   campus: number = 0, 
   part: number = 0, 
-  term: number = 0
+  term: number = 0,
+  course: string = ''
 ): Promise<any[] | null> {
   let cookiesObj;
 
@@ -86,7 +87,7 @@ export async function fetch(
 
   let sessionId = cookiesObj["__Secure-SID"];
 
-  const process = spawnSync('python3', ['./src/scripts/scraper.py', sessionId, campus, part, term], { 
+  const process = spawnSync('python3', ['./src/scripts/scraper.py', sessionId, campus, part, term, course], { 
     encoding: 'utf-8',
     maxBuffer: 1024 * 1024 * 1000
   });

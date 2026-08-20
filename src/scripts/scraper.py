@@ -15,6 +15,7 @@ session_id = sys.argv[1]
 campus = int(sys.argv[2]) if sys.argv[2] else 0
 part = int(sys.argv[3]) if sys.argv[3] else 0
 term = int(sys.argv[4]) if sys.argv[4] else 0
+course = sys.argv[5].lower if sys.argv[5] else ''
 
 # GET COOKIES FROM AH
 cookies = {
@@ -65,50 +66,59 @@ course_list = fetch_courses.json()['CourseDrp']
 #####################################################################################################################################################################################################
 
 classes = []
-no_courses = len(course_list)
 
-q2 = no_courses // 2
-q1 = q2 // 2
-q3 = q2 + q1
-oe = q1 // 2
+if course:
+    selected_course = next(item for item in course_list if course in item["COURSE_NAME"])
+    payload["Courseid"] = selected_course["COURSE_CREATION_ID"]
+    response = r.post(url3, json=payload, headers=headers, cookies=cookies)
+    new_classes = response.json()
+    classes.extend(new_classes) 
 
-half = part % 2 if part > 0 and part <= 8 else -1
-part = (part - 1) // 2 + 1 if part > 0 and part <= 8 else part
+else:
+    no_courses = len(course_list)
 
-match part:
-    case 1: 
-        start, end = 0, q1
-    case 2:
-        start, end = q1, q2
-    case 3:
-        start, end = q2, q3
-    case 4:
-        start, end = q3, no_courses
-    case _:
-        start, end = 0, no_courses
+    q2 = no_courses // 2
+    q1 = q2 // 2
+    q3 = q2 + q1
+    oe = q1 // 2
 
-match half:
-    case 1:
-        start, end = start, end - oe
-    case 0:
-        start, end = start - oe + 1, end
+    half = part % 2 if part > 0 and part <= 8 else -1
+    part = (part - 1) // 2 + 1 if part > 0 and part <= 8 else part
 
-i = start
+    match part:
+        case 1: 
+            start, end = 0, q1
+        case 2:
+            start, end = q1, q2
+        case 3:
+            start, end = q2, q3
+        case 4:
+            start, end = q3, no_courses
+        case _:
+            start, end = 0, no_courses
+
+    match half:
+        case 1:
+            start, end = start, end - oe
+        case 0:
+            start, end = start - oe + 1, end
+
+    i = start
+            
+    while i < end:
+        k = min(i + 25, end)   
         
-while i < end:
-    k = min(i + 25, end)   
-    
-    for j in range(i, k):
-        payload["Courseid"] = course_list[j]["COURSE_CREATION_ID"]
+        for j in range(i, k):
+            payload["Courseid"] = course_list[j]["COURSE_CREATION_ID"]
 
-        response = r.post(url3, json=payload, headers=headers, cookies=cookies)
-        new_classes = response.json()
-        
-        classes.extend(new_classes) 
-        
-        time.sleep(0.5)
-        
-    i += 25
+            response = r.post(url3, json=payload, headers=headers, cookies=cookies)
+            new_classes = response.json()
+            
+            classes.extend(new_classes) 
+            
+            time.sleep(0.5)
+            
+        i += 25
   
 #####################################################################################################################################################################################################
 
