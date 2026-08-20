@@ -15,16 +15,18 @@ export async function createCourse(
     const {
         courseName,
         section,
+        remarks,
         modality,
         term,
         campus
     } = courseData;
 
     const [resultCourse] = await pool.query<ResultSetHeader>(
-        `INSERT INTO courses (course_name, section, modality, term, campus)
+        `INSERT INTO courses (course_name, section, remarks, modality, term, campus)
         VALUES (?, ?, ?, ?, ?)`, [
             courseName,
             section,
+            remarks,
             modality,
             term,
             campus
@@ -77,6 +79,7 @@ export async function updateCourse(
     const {
         courseName,
         section,
+        remarks,
         modality,
         term,
         campus
@@ -84,10 +87,11 @@ export async function updateCourse(
 
     await pool.query<ResultSetHeader>(
         `UPDATE courses
-        SET course_name = ?, section = ?, modality = ?, term = ?, campus = ?
+        SET course_name = ?, section = ?, remarks = ?, modality = ?, term = ?, campus = ?
         WHERE cid = ?`, [
             courseName,
             section,
+            remarks,
             modality,
             term,
             campus,

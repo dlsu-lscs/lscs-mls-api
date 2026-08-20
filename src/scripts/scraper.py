@@ -15,7 +15,7 @@ session_id = sys.argv[1]
 campus = int(sys.argv[2]) if sys.argv[2] else 0
 part = int(sys.argv[3]) if sys.argv[3] else 0
 term = int(sys.argv[4]) if sys.argv[4] else 0
-half = 0
+half = int(sys.argv[5]) if sys.argv[5] else 0
 
 # GET COOKIES FROM AH
 cookies = {
@@ -66,8 +66,6 @@ course_list = fetch_courses.json()['CourseDrp']
 #####################################################################################################################################################################################################
 
 classes = []
-class_schedules = []
-
 no_courses = len(course_list)
 
 q2 = no_courses // 2
@@ -87,16 +85,15 @@ match part:
         start, end = 0, no_courses
 
 match half:
-    case 0:
-        start, end = start, end // 2
     case 1:
-        start, end = start // 2, end
+        start, end = start, end - q1
+    case 2:
+        start, end = start + q1 , end
 
 i = start
         
 while i < end:
-    k = min(i + 25, end)    
-    batch_classes = [] 
+    k = min(i + 25, end)   
     
     for j in range(i, k):
         payload["Courseid"] = course_list[j]["COURSE_CREATION_ID"]
@@ -104,47 +101,23 @@ while i < end:
         response = r.post(url3, json=payload, headers=headers, cookies=cookies)
         new_classes = response.json()
         
-        batch_classes.extend(new_classes)
-        
         classes.extend(new_classes) 
         
         time.sleep(0.5)
-
-    enlistmentSchedule = []
-
-    for item in batch_classes: 
-        enlistmentSchedule.append({
-            'COURSE_CREATION_ID': item['COURSE_CREATION_ID'],
-            'SECTION_CREATION_ID': item['SECTION_CREATION_ID'],
-            'BATCH_CREATION_ID': item['BATCH_CREATION_ID'],
-            'CAMPUSNO': payload['Campusno']
-        })
-
-    payload_classes = {
-        'ACADEMICSESSIONID': payload['AcademicSession'],
-        'enlistmentSchedule': enlistmentSchedule
-    }
-
-    fetch_class_schedules = r.post(url4, json=payload_classes, headers=headers, cookies=cookies)
-    
-    if fetch_class_schedules.status_code == 200:
-        course_class_schedules = fetch_class_schedules.json()
-        class_schedules.extend(course_class_schedules)
         
     i += 25
-    time.sleep(0.5)
   
 #####################################################################################################################################################################################################
 
-# Gets dates for the schedule
-earliest_schedule = min(class_schedules, key=lambda item: item['TIME_TABLE_DATE'])
-basis_date = datetime.strptime(earliest_schedule['TIME_TABLE_DATE'], "%Y-%m-%d").date()
-basis_day = basis_date.weekday()
-days_of_week = ['M', 'T', 'W', 'H', 'F', 'S', 'U']
-week = { str(basis_date + timedelta(days = i - basis_day)): days_of_week[i] for i in range(7) }
-
-# Finds schedules that fit within the week
-week_schedules = list(filter(lambda item: item['TIME_TABLE_DATE'] in week.keys(), class_schedules))
+days_abbr = {
+    'MONDAY':     'M',
+    'TUESDAY':    'T',
+    'WEDNESDAY':  'W',
+    'THURSDAY':   'H',
+    'FRIDAY':     'F',
+    'SATURDAY':   'S',
+    'SUNDAY':     'U'
+}
 
 courses = []
 course_enrollments = []
@@ -155,76 +128,81 @@ i = 0
 # Parses main course info and course enrollment info
 for item in classes:
     course_id = len(courses) + 1
+    class_schedules = {}
+    ol_sessions = 0
+    ip_sessions = 0
 
     course_code = item["SUBJECT_NAME"].split(' - ')[0]
     course_dict_key = course_code + " - " + item["SECTION_NAME"]
     course_dict[course_dict_key] = course_id
+    class_instructor = item["MAIN_TEACHER"]
 
-    courses.append({
+    course = {
         "courseId": course_id,
         "courseName": item["SUBJECT_NAME"],
         "section": item["SECTION_NAME"],
+        "remarks": item["SECTION_REMARKS"],
         "term": chosen_term_name,
         "campus": selected_campus
-    })
+    }
 
-    course_enrollments.append({
+    course_enrollment = {
         "courseId": course_id,
         "enrollCap": item["CAPACITY"],
         "enrolled": item["ENLISTED"]
-    })
+    }
 
-class_sessions = { item: 0 for item in course_dict.keys() }
-class_online_sessions = copy.deepcopy(class_sessions)
+    schedules_info = item["SCHEDULE"].replace('[ ', '').replace(' ]', '').split(' | ')
 
-# Parses course schedules
-for item in week_schedules:
-    item_classes = list(set(item["COURSE_NAME"].split(" <br/> ")))
+    for schedule in schedules_info:
+        temp = schedule.split(' - ', 1)
+        class_day = days_abbr[temp[0]]
 
-    for item_class in item_classes:
-        class_info = list(map(lambda x: x.split(":")[-1].strip(), item_class.split("</span><span>")))
+        temp = temp[1].split(' : ')
+        class_start, class_end = temp[0].strip().split(' - ')
+        class_room = temp[1].replace('Room - ', '') if len(temp) > 1 else ''
+        
+        if class_day in class_schedules:
+            if not class_room:
+                class_room = class_schedules[class_day]["room"]
+            elif class_schedules[class_day]["room"]:
+                class_room = f"{class_schedules[class_day]["room"]}/{class_room}"
 
-        class_section = class_info[5]
-        class_start = datetime.strptime(item["TIME_FROM"], "%I:%M %p").strftime("%H:%M")
-        class_end = datetime.strptime(item["TIME_TO"], "%I:%M %p").strftime("%H:%M")
-        class_room = class_info[2]
-        class_instructor = class_info[3]
+        class_schedules[class_day] = {
+            "start": datetime.strptime(class_start, "%I:%M %p").strftime("%H:%M"),
+            "end": datetime.strptime(class_end, "%I:%M %p").strftime("%H:%M"),
+            "room": class_room
+        }
 
-        course_dict_key = item["COURSE_CODE"] + " - " + class_section
-
-        class_course_id = course_dict.get(course_dict_key)
-        class_day = week.get(item["TIME_TABLE_DATE"])
-        class_time = class_start + " - " + class_end
+    for day in class_schedules.keys():
+        timeslot = class_schedules[day]
+        class_time = timeslot["start"] + "-" + timeslot["end"]
+        class_room = timeslot["room"]
 
         course_timeslots.append({
-            "courseId": class_course_id,
-            "day": class_day,
+            "courseId": course_id,
+            "day": day,
             "time": class_time,
             "room": class_room,
             "instructor": class_instructor
         })
 
-        class_sessions[course_dict_key] += 1
+        ol_sessions = ol_sessions + ("Online" in class_room)
+        ip_sessions = ip_sessions + (class_room and "Online" not in class_room)
 
-        if class_room == "Online" or class_room == "-":
-            class_online_sessions[course_dict_key] += 1
+    if ol_sessions > 0 and ip_sessions > 0:
+        modality = "Hybrid"
+    elif ol_sessions > 0:
+        modality = "Predominantly Online"
+    elif ip_sessions > 0:
+        modality = "Predominantly In-Person"
+    else:
+        modality = "TBD"
 
-for item in class_online_sessions.keys():
-    course, section = item.split(' - ')
+    course["modality"] = modality
 
-    sessions = class_sessions[item]
-    online_sessions = class_online_sessions[item]
-
-    match online_sessions:
-        case 0:
-            modality = "Predominantly In-Person"
-        case _ if online_sessions == sessions:
-            modality = "Full Online"
-        case _:
-            modality = "Hybrid"
-
-    course_idx = next((idx for idx, item in enumerate(courses) if course in item["courseName"] and item["section"] == section), -1)
-    courses[course_idx]["modality"] = modality
+    courses.append(course)
+    course_enrollments.append(course_enrollment)
 
 # Combines all parsed information into a single JSON object
 info = [courses, course_timeslots, course_enrollments]
