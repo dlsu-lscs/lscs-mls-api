@@ -15,6 +15,7 @@ session_id = sys.argv[1]
 campus = int(sys.argv[2]) if sys.argv[2] else 0
 part = int(sys.argv[3]) if sys.argv[3] else 0
 term = int(sys.argv[4]) if sys.argv[4] else 0
+half = 0
 
 # GET COOKIES FROM AH
 cookies = {
@@ -85,6 +86,12 @@ match part:
     case _:
         start, end = 0, no_courses
 
+match half:
+    case 0:
+        start, end = start, end // 2
+    case 1:
+        start, end = start // 2, end
+
 i = start
         
 while i < end:
@@ -130,7 +137,8 @@ while i < end:
 #####################################################################################################################################################################################################
 
 # Gets dates for the schedule
-basis_date = datetime.strptime(class_schedules[0]['TIME_TABLE_DATE'], "%Y-%m-%d").date()
+earliest_schedule = min(class_schedules, key=lambda item: item['TIME_TABLE_DATE'])
+basis_date = datetime.strptime(earliest_schedule['TIME_TABLE_DATE'], "%Y-%m-%d").date()
 basis_day = basis_date.weekday()
 days_of_week = ['M', 'T', 'W', 'H', 'F', 'S', 'U']
 week = { str(basis_date + timedelta(days = i - basis_day)): days_of_week[i] for i in range(7) }

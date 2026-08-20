@@ -9,6 +9,19 @@ const puppeteer = addExtra(vanillaPuppeteer as any);
 
 puppeteer.use(StealthPlugin());
 
+const BROWSER_CONFIG = {
+  args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-blink-features=AutomationControlled',
+      '--window-size=1920,1080',
+    ],
+    defaultViewport: {
+      width: 1920,
+      height: 1080
+    }
+}
+
 export async function isValidSession(): Promise<boolean> {
   // File checks — no browser needed for these
   if (!fs.existsSync('./ah-cookies.json')) {
@@ -30,11 +43,12 @@ export async function isValidSession(): Promise<boolean> {
 
   // Only launch browser if cookie file looks valid
   const browser = await puppeteer.launch({ 
-    headless: true
+    headless: true,
+    ...BROWSER_CONFIG
   });
   
   const page = await browser.newPage();
-  page.setDefaultTimeout(600000);
+  page.setDefaultTimeout(300000);
 
   try {
     await browser.setCookie(...cookies);
@@ -57,11 +71,12 @@ export async function isValidSession(): Promise<boolean> {
 
 export async function login() {
   const browser = await puppeteer.launch({
-    headless: true
+    headless: false,
+    ...BROWSER_CONFIG
   });
 
   const page = await browser.newPage();
-  await page.setDefaultTimeout(600000);
+  await page.setDefaultTimeout(300000);
   await page.goto('https://archershub.dlsu.edu.ph');
 
   try {
@@ -70,44 +85,96 @@ export async function login() {
     // Searches html for selectors
     await page.waitForSelector('#txtuserid', { visible: true });
     await page.waitForSelector('#txtpassword', { visible: true });
-    await page.waitForSelector('#txtCaptchaTextLogin', { visible: true });
-    await page.waitForSelector('#captchaImageLogin', { visible: true });
     await page.waitForSelector('#btnSignIn', { visible: true });
     
     // Enters username and password
-    await page.type('#txtuserid', process.env.AH_USERNAME as string, { delay: 100 });
-    await page.type('#txtpassword', process.env.AH_PASSWORD as string, { delay: 100 });
+    await page.type('#txtuserid', process.env.AH_USERNAME as string, { delay: 300 });
+    await page.type('#txtpassword', process.env.AH_PASSWORD as string, { delay: 300 });
 
-    // Identifies captcha image and performs OCR
-    const element = await page.$('#captchaImageLogin');
-    await element?.screenshot({ path: 'captcha.png' });
+    await new Promise(r => setTimeout(r, 15000)); 
 
-    const worker = await createWorker('eng');
-    const captcha = await worker.recognize('./captcha.png');
-    await worker.terminate();
-
-    // Enters captcha
-    await page.type('#txtCaptchaTextLogin', captcha.data.text, { delay: 100 });
-
-    // Enters OTP
-    await page.waitForSelector('#btnTwoStepVerifyOTP', { visible: true, timeout: 10000 });
-    await new Promise(r => setTimeout(r, 5000)); 
-    console.log("Fetching OTP.");
-    const otp = await otpFetch();
-
-    if (!otp) {
-      throw new Error("OTP not fetched successfully.");
+    const hasImageCaptcha = await page.$('#captchaImageLogin') !== null;
+    let turnstileFrame = null;
+    for (const frame of page.frames()) {
+      if (frame.url().includes('cloudflare') || frame.url().includes('turnstile')) {
+        turnstileFrame = frame;
+        break;
+      }
     }
 
-    await page.type('#txtTwoStepOTP', otp, { delay: 100 });
-    await page.click('#btnTwoStepVerifyOTP');
+    if (hasImageCaptcha) {
+      console.log("Image Captcha detected. Processing OCR...");
 
-    await page.setViewport({ width: 1920, height: 1080 });
-    await page.waitForSelector('#SPInsName', { visible: true, timeout: 15000 });
+      // Identifies captcha image and performs OCR
+      const element = await page.$('#captchaImageLogin');
+      await element?.screenshot({ path: 'captcha.png' });
+  
+      const worker = await createWorker('eng');
+      const captcha = await worker.recognize('./captcha.png');
+      await worker.terminate();
+  
+      // Enters captcha
+      await page.type('#txtCaptchaTextLogin', captcha.data.text, { delay: 100 });
+    } else if (turnstileFrame) {
+      console.log("\n=== ACTION NEEDED ===");
+      console.log("Cloudflare Turnstile detected. Please solve it manually in the browser window.");
+      console.log("Waiting for you to complete it (up to 2 minutes)...\n");
+
+      const maxWaitMs = 120000; // 2 minutes to solve it yourself
+      const pollIntervalMs = 1000;
+      let waited = 0;
+      let isDisabled = true;
+
+      while (waited < maxWaitMs) {
+        isDisabled = await page.$eval('#btnSignIn', el => (el as HTMLButtonElement).disabled)
+          .catch(() => true); // if button vanished (e.g. page navigated already), stop waiting
+
+        if (!isDisabled) break;
+
+        await new Promise(r => setTimeout(r, pollIntervalMs));
+        waited += pollIntervalMs;
+
+        // Friendly nudge every 30s so you know it's still waiting on you
+        if (waited % 30000 === 0) {
+          console.log(`Still waiting for Turnstile to be solved... (${waited / 1000}s elapsed)`);
+        }
+      }
+
+      if (isDisabled) {
+        throw new Error("Turnstile was not solved in time (2 min timeout). Aborting login.");
+      }
+
+      console.log("Turnstile passed. Continuing...");
+      await page.click('#btnSignIn');
+    } else {
+      console.log("Login failed.");
+      return false;
+    }
+
+    await new Promise(r => setTimeout(r, 10000)); 
+
+    console.log("Waiting for next step (OTP or Dashboard)...");
     
-    console.log("Logging in to ArchersHub.");
+    // Wait for either the OTP field or the Dashboard to load
+    const nextStep = await Promise.race([
+        page.waitForSelector('#btnTwoStepVerifyOTP', { visible: true, timeout: 15000 }).then(() => 'OTP'),
+        page.waitForSelector('#SPInsName', { visible: true, timeout: 15000 }).then(() => 'DASHBOARD')
+    ]).catch(() => 'UNKNOWN');
 
-    await new Promise(r => setTimeout(r, 5000)); 
+    if (nextStep === 'OTP') {
+      console.log("OTP Required. Fetching OTP.");
+      await new Promise(r => setTimeout(r, 5000)); 
+      const otp = await otpFetch();
+      if (!otp) throw new Error("OTP not fetched successfully.");
+  
+      await page.type('#txtTwoStepOTP', otp, { delay: 100 });
+      await page.click('#btnTwoStepVerifyOTP');
+      
+      // Wait for dashboard after OTP
+      await page.waitForSelector('#SPInsName', { visible: true, timeout: 15000 });
+    } else if (nextStep === 'UNKNOWN') {
+      throw new Error("Failed to reach Dashboard or OTP screen.");
+    }
     
     console.log("Logged in to ArchersHub. Extracting cookies.");
 
