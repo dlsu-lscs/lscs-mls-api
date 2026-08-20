@@ -15,7 +15,6 @@ session_id = sys.argv[1]
 campus = int(sys.argv[2]) if sys.argv[2] else 0
 part = int(sys.argv[3]) if sys.argv[3] else 0
 term = int(sys.argv[4]) if sys.argv[4] else 0
-half = int(sys.argv[5]) if sys.argv[5] else 0
 
 # GET COOKIES FROM AH
 cookies = {
@@ -71,6 +70,10 @@ no_courses = len(course_list)
 q2 = no_courses // 2
 q1 = q2 // 2
 q3 = q2 + q1
+oe = q1 // 2
+
+half = part % 2 if part > 0 and part <= 8 else -1
+part = (part - 1) // 2 + 1 if part > 0 and part <= 8 else part
 
 match part:
     case 1: 
@@ -86,9 +89,9 @@ match part:
 
 match half:
     case 1:
-        start, end = start, end - q1
-    case 2:
-        start, end = start + q1 , end
+        start, end = start, end - oe
+    case 0:
+        start, end = start - oe + 1, end
 
 i = start
         
