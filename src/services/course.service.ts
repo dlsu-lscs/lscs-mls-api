@@ -23,7 +23,7 @@ export async function createCourse(
 
     const [resultCourse] = await pool.query<ResultSetHeader>(
         `INSERT INTO courses (course_name, section, remarks, modality, term, campus)
-        VALUES (?, ?, ?, ?, ?)`, [
+        VALUES (?, ?, ?, ?, ?, ?)`, [
             courseName,
             section,
             remarks,

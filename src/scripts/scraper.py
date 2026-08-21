@@ -15,7 +15,7 @@ session_id = sys.argv[1]
 campus = int(sys.argv[2]) if sys.argv[2] else 0
 part = int(sys.argv[3]) if sys.argv[3] else 0
 term = int(sys.argv[4]) if sys.argv[4] else 0
-course = sys.argv[5].lower if sys.argv[5] else ''
+course = sys.argv[5].lower() if sys.argv[5] else ''
 
 # GET COOKIES FROM AH
 cookies = {
@@ -68,7 +68,7 @@ course_list = fetch_courses.json()['CourseDrp']
 classes = []
 
 if course:
-    selected_course = next(item for item in course_list if course in item["COURSE_NAME"])
+    selected_course = next(item for item in course_list if course in item["COURSE_NAME"].lower())
     payload["Courseid"] = selected_course["COURSE_CREATION_ID"]
     response = r.post(url3, json=payload, headers=headers, cookies=cookies)
     new_classes = response.json()
@@ -144,6 +144,7 @@ for item in classes:
     class_schedules = {}
     ol_sessions = 0
     ip_sessions = 0
+    tbd_sessions = 0
 
     course_code = item["SUBJECT_NAME"].split(' - ')[0]
     course_dict_key = course_code + " - " + item["SECTION_NAME"]
@@ -154,7 +155,7 @@ for item in classes:
         "courseId": course_id,
         "courseName": item["SUBJECT_NAME"],
         "section": item["SECTION_NAME"],
-        "remarks": item["SECTION_REMARKS"],
+        "remarks": item["SECTION_REMARK"],
         "term": chosen_term_name,
         "campus": selected_campus
     }
@@ -201,10 +202,13 @@ for item in classes:
         })
 
         ol_sessions = ol_sessions + ("Online" in class_room)
-        ip_sessions = ip_sessions + (class_room and "Online" not in class_room)
+        ip_sessions = ip_sessions + (bool(class_room) and "Online" not in class_room)
+        tbd_sessions = tbd_sessions + (not bool(class_room))
 
     if ol_sessions > 0 and ip_sessions > 0:
         modality = "Hybrid"
+    elif tbd_sessions:
+        modality = "TBD"
     elif ol_sessions > 0:
         modality = "Predominantly Online"
     elif ip_sessions > 0:

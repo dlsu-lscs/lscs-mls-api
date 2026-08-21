@@ -13,8 +13,13 @@ const BROWSER_CONFIG = {
   args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
       '--disable-blink-features=AutomationControlled',
       '--window-size=1920,1080',
+      '--enable-gpu', 
+      '--enable-gpu-rasterization',
+      '--ignore-gpu-blocklist', 
+      '--enable-unsafe-webgpu',
     ],
     defaultViewport: {
       width: 1920,
@@ -77,6 +82,32 @@ export async function login() {
 
   const page = await browser.newPage();
   await page.setDefaultTimeout(300000);
+
+  // Hook the site's own Turnstile success callback so we get an exact signal
+  // the moment a human solves it — this only *observes* the callback, it doesn't
+  // touch how the challenge itself is solved.
+  await page.evaluateOnNewDocument(() => {
+    (window as any).__turnstileSolved = false;
+    const originalCallbackName = 'onCloudflareTurnstileSuccess';
+
+    // Wrap the site's function once it's defined
+    Object.defineProperty(window, originalCallbackName, {
+      configurable: true,
+      set(fn) {
+        (window as any).__realTurnstileCallback = fn;
+      },
+      get() {
+        return (token: string) => {
+          (window as any).__turnstileSolved = true;
+          console.log('[page] Turnstile solved, token received');
+          if ((window as any).__realTurnstileCallback) {
+            (window as any).__realTurnstileCallback(token);
+          }
+        };
+      }
+    });
+  });
+
   await page.goto('https://archershub.dlsu.edu.ph');
 
   try {
@@ -116,6 +147,7 @@ export async function login() {
       // Enters captcha
       await page.type('#txtCaptchaTextLogin', captcha.data.text, { delay: 100 });
     } else if (turnstileFrame) {
+      
       console.log("\n=== ACTION NEEDED ===");
       console.log("Cloudflare Turnstile detected. Please solve it manually in the browser window.");
       console.log("Waiting for you to complete it (up to 2 minutes)...\n");
@@ -126,21 +158,27 @@ export async function login() {
       let isDisabled = true;
 
       while (waited < maxWaitMs) {
-        isDisabled = await page.$eval('#btnSignIn', el => (el as HTMLButtonElement).disabled)
-          .catch(() => true); // if button vanished (e.g. page navigated already), stop waiting
+        const solved = await page.evaluate(() => (window as any).__turnstileSolved === true);
 
-        if (!isDisabled) break;
+        if (waited % 5000 === 0) {
+          console.log(`  [poll @ ${waited / 1000}s] turnstileSolved=${solved}`);
+        }
+
+        if (solved) {
+          console.log("  Turnstile success callback fired, proceeding.");
+          break;
+        }
 
         await new Promise(r => setTimeout(r, pollIntervalMs));
         waited += pollIntervalMs;
 
-        // Friendly nudge every 30s so you know it's still waiting on you
         if (waited % 30000 === 0) {
           console.log(`Still waiting for Turnstile to be solved... (${waited / 1000}s elapsed)`);
         }
       }
 
-      if (isDisabled) {
+      const finalSolved = await page.evaluate(() => (window as any).__turnstileSolved === true);
+      if (!finalSolved) {
         throw new Error("Turnstile was not solved in time (2 min timeout). Aborting login.");
       }
 
