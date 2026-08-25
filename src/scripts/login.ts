@@ -4,6 +4,7 @@ import vanillaPuppeteer from 'puppeteer';
 import { addExtra } from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { createWorker } from 'tesseract.js';
+import { connect } from 'puppeteer-real-browser';
 
 const puppeteer = addExtra(vanillaPuppeteer as any);
 
@@ -11,8 +12,6 @@ puppeteer.use(StealthPlugin());
 
 const BROWSER_CONFIG = {
   args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
       '--disable-blink-features=AutomationControlled',
       '--window-size=1920,1080',
@@ -75,12 +74,11 @@ export async function isValidSession(): Promise<boolean> {
 }
 
 export async function login() {
-  const browser = await puppeteer.launch({
+  const { page, browser } = await connect({
     headless: false,
     ...BROWSER_CONFIG
   });
 
-  const page = await browser.newPage();
   await page.setDefaultTimeout(300000);
 
   // Hook the site's own Turnstile success callback so we get an exact signal
@@ -121,82 +119,18 @@ export async function login() {
     // Enters username and password
     await page.type('#txtuserid', process.env.AH_USERNAME as string, { delay: 300 });
     await page.type('#txtpassword', process.env.AH_PASSWORD as string, { delay: 300 });
+    await page.click('#btnSignIn');
 
-    await new Promise(r => setTimeout(r, 15000)); 
+    await new Promise(r => setTimeout(r, 7500)); 
 
-    const hasImageCaptcha = await page.$('#captchaImageLogin') !== null;
-    let turnstileFrame = null;
-    for (const frame of page.frames()) {
-      if (frame.url().includes('cloudflare') || frame.url().includes('turnstile')) {
-        turnstileFrame = frame;
-        break;
-      }
-    }
-
-    if (hasImageCaptcha) {
-      console.log("Image Captcha detected. Processing OCR...");
-
-      // Identifies captcha image and performs OCR
-      const element = await page.$('#captchaImageLogin');
-      await element?.screenshot({ path: 'captcha.png' });
-  
-      const worker = await createWorker('eng');
-      const captcha = await worker.recognize('./captcha.png');
-      await worker.terminate();
-  
-      // Enters captcha
-      await page.type('#txtCaptchaTextLogin', captcha.data.text, { delay: 100 });
-    } else if (turnstileFrame) {
-      
-      console.log("\n=== ACTION NEEDED ===");
-      console.log("Cloudflare Turnstile detected. Please solve it manually in the browser window.");
-      console.log("Waiting for you to complete it (up to 2 minutes)...\n");
-
-      const maxWaitMs = 120000; // 2 minutes to solve it yourself
-      const pollIntervalMs = 1000;
-      let waited = 0;
-      let isDisabled = true;
-
-      while (waited < maxWaitMs) {
-        const solved = await page.evaluate(() => (window as any).__turnstileSolved === true);
-
-        if (waited % 5000 === 0) {
-          console.log(`  [poll @ ${waited / 1000}s] turnstileSolved=${solved}`);
-        }
-
-        if (solved) {
-          console.log("  Turnstile success callback fired, proceeding.");
-          break;
-        }
-
-        await new Promise(r => setTimeout(r, pollIntervalMs));
-        waited += pollIntervalMs;
-
-        if (waited % 30000 === 0) {
-          console.log(`Still waiting for Turnstile to be solved... (${waited / 1000}s elapsed)`);
-        }
-      }
-
-      const finalSolved = await page.evaluate(() => (window as any).__turnstileSolved === true);
-      if (!finalSolved) {
-        throw new Error("Turnstile was not solved in time (2 min timeout). Aborting login.");
-      }
-
-      console.log("Turnstile passed. Continuing...");
-      await page.click('#btnSignIn');
-    } else {
-      console.log("Login failed.");
-      return false;
-    }
-
-    await new Promise(r => setTimeout(r, 10000)); 
+    await new Promise(r => setTimeout(r, 7500)); 
 
     console.log("Waiting for next step (OTP or Dashboard)...");
     
     // Wait for either the OTP field or the Dashboard to load
     const nextStep = await Promise.race([
         page.waitForSelector('#btnTwoStepVerifyOTP', { visible: true, timeout: 15000 }).then(() => 'OTP'),
-        page.waitForSelector('#SPInsName', { visible: true, timeout: 15000 }).then(() => 'DASHBOARD')
+        page.waitForSelector('#SPInstLogo', { visible: true, timeout: 15000 }).then(() => 'DASHBOARD')
     ]).catch(() => 'UNKNOWN');
 
     if (nextStep === 'OTP') {
@@ -209,7 +143,7 @@ export async function login() {
       await page.click('#btnTwoStepVerifyOTP');
       
       // Wait for dashboard after OTP
-      await page.waitForSelector('#SPInsName', { visible: true, timeout: 15000 });
+      await page.waitForSelector('#SPInstLogo', { visible: true, timeout: 15000 });
     } else if (nextStep === 'UNKNOWN') {
       throw new Error("Failed to reach Dashboard or OTP screen.");
     }

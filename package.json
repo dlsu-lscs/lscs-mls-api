@@ -28,6 +28,7 @@
     "puppeteer": "^24.43.1",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "puppeteer-real-browser": "^1.4.4",
     "tesseract.js": "^7.0.0",
     "winston": "^3.18.3"
   },
@@ -43,5 +44,8 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.0",
     "vitest": "^3.2.4"
+  },
+  "allowScripts": {
+    "puppeteer@24.43.1": true
   }
 }
