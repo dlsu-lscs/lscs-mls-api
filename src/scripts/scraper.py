@@ -135,21 +135,18 @@ days_abbr = {
 courses = []
 course_enrollments = []
 course_timeslots = []
-course_dict = {}
 i = 0
 
 # Parses main course info and course enrollment info
 for item in classes:
     course_id = len(courses) + 1
-    class_schedules = {}
+    class_schedules = []
     ol_sessions = 0
     ip_sessions = 0
     tbd_sessions = 0
 
     course_code = item["SUBJECT_NAME"].split(' - ')[0]
-    course_dict_key = course_code + " - " + item["SECTION_NAME"]
-    course_dict[course_dict_key] = course_id
-    class_instructor = item["MAIN_TEACHER"]
+    class_instructor = item["MAIN_TEACHER"] if item["MAIN_TEACHER"] else "TBD" 
 
     course = {
         "courseId": course_id,
@@ -175,27 +172,25 @@ for item in classes:
         temp = temp[1].split(' : ')
         class_start, class_end = temp[0].strip().split(' - ')
         class_room = temp[1].replace('Room - ', '') if len(temp) > 1 else ''
-        
-        if class_day in class_schedules:
-            if not class_room:
-                class_room = class_schedules[class_day]["room"]
-            elif class_schedules[class_day]["room"]:
-                class_room = f"{class_schedules[class_day]["room"]}/{class_room}"
 
-        class_schedules[class_day] = {
+        class_schedule = {
             "start": datetime.strptime(class_start, "%I:%M %p").strftime("%H:%M"),
             "end": datetime.strptime(class_end, "%I:%M %p").strftime("%H:%M"),
-            "room": class_room
+            "room": class_room,
+            "day": class_day
         }
 
-    for day in class_schedules.keys():
-        timeslot = class_schedules[day]
+        class_schedules.append(class_schedule)
+
+    for timeslot in class_schedules:
+
         class_time = timeslot["start"] + "-" + timeslot["end"]
         class_room = timeslot["room"]
+        class_day = timeslot["day"]
 
         course_timeslots.append({
             "courseId": course_id,
-            "day": day,
+            "day": class_day,
             "time": class_time,
             "room": class_room,
             "instructor": class_instructor

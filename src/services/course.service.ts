@@ -114,26 +114,40 @@ export async function updateCourse(
         ]
     );
 
-    newTimeslotData.forEach(async (curr: UpdateCourseTimeslot) => {
-        let {
-            day, 
-            time,
-            room,
-            instructor,
-        } = curr;
+    const [existingRows] = await pool.query<RowDataPacket[]>(
+        `SELECT id, day, time, room, instructor FROM course_timeslots WHERE course_id = ?`, 
+        [courseId]
+    );
 
-        await pool.query<ResultSetHeader>(
-            `UPDATE course_timeslots
-            SET room = ?, instructor = ?
-            WHERE course_id = ? AND day = ? AND time = ?`, [
-                room,
-                instructor,
-                courseId,
-                day,
-                time
-            ]
-        );
-    })
+    const existingMap = new Map(existingRows.map(row => [`${row.day}|${row.time}`, row]));
+    const incomingMap = new Map(newTimeslotData.map(ts => [`${ts.day}|${ts.time}`, ts]));
+
+    const queries: Promise<any>[] = [];
+
+    for (const [key, incoming] of incomingMap.entries()) {
+        if (existingMap.has(key)) {
+            queries.push(pool.query(
+                `UPDATE course_timeslots SET room = ?, instructor = ? WHERE course_id = ? AND day = ? AND time = ?`,
+                [incoming.room, incoming.instructor, courseId, incoming.day, incoming.time]
+            ));
+        } else {
+            queries.push(pool.query(
+                `INSERT INTO course_timeslots (course_id, day, time, room, instructor) VALUES (?, ?, ?, ?, ?)`,
+                [courseId, incoming.day, incoming.time, incoming.room, incoming.instructor]
+            ));
+        }
+    }
+
+    for (const [key, existing] of existingMap.entries()) {
+        if (!incomingMap.has(key)) {
+            queries.push(pool.query(
+                `DELETE FROM course_timeslots WHERE id = ?`, 
+                [existing.id] 
+            ));
+        }
+    }
+
+    await Promise.all(queries);
 }
 
 export async function fetchCourses(

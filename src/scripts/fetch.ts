@@ -92,8 +92,6 @@ export async function fetch(
     maxBuffer: 1024 * 1024 * 1000
   });
 
-  console.log(process)
-
   if (process.error) {
     console.error('Error parsing: ' + process.error.message);
     return null;
