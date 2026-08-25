@@ -15,16 +15,18 @@ export async function createCourse(
     const {
         courseName,
         section,
+        remarks,
         modality,
         term,
         campus
     } = courseData;
 
     const [resultCourse] = await pool.query<ResultSetHeader>(
-        `INSERT INTO courses (course_name, section, modality, term, campus)
-        VALUES (?, ?, ?, ?, ?)`, [
+        `INSERT INTO courses (course_name, section, remarks, modality, term, campus)
+        VALUES (?, ?, ?, ?, ?, ?)`, [
             courseName,
             section,
+            remarks,
             modality,
             term,
             campus
@@ -77,6 +79,7 @@ export async function updateCourse(
     const {
         courseName,
         section,
+        remarks,
         modality,
         term,
         campus
@@ -84,10 +87,11 @@ export async function updateCourse(
 
     await pool.query<ResultSetHeader>(
         `UPDATE courses
-        SET course_name = ?, section = ?, modality = ?, term = ?, campus = ?
+        SET course_name = ?, section = ?, remarks = ?, modality = ?, term = ?, campus = ?
         WHERE cid = ?`, [
             courseName,
             section,
+            remarks,
             modality,
             term,
             campus,
@@ -110,32 +114,47 @@ export async function updateCourse(
         ]
     );
 
-    newTimeslotData.forEach(async (curr: UpdateCourseTimeslot) => {
-        let {
-            day, 
-            time,
-            room,
-            instructor,
-        } = curr;
+    const [existingRows] = await pool.query<RowDataPacket[]>(
+        `SELECT id, day, time, room, instructor FROM course_timeslots WHERE course_id = ?`, 
+        [courseId]
+    );
 
-        await pool.query<ResultSetHeader>(
-            `UPDATE course_timeslots
-            SET room = ?, instructor = ?
-            WHERE course_id = ? AND day = ? AND time = ?`, [
-                room,
-                instructor,
-                courseId,
-                day,
-                time
-            ]
-        );
-    })
+    const existingMap = new Map(existingRows.map(row => [`${row.day}|${row.time}`, row]));
+    const incomingMap = new Map(newTimeslotData.map(ts => [`${ts.day}|${ts.time}`, ts]));
+
+    const queries: Promise<any>[] = [];
+
+    for (const [key, incoming] of incomingMap.entries()) {
+        if (existingMap.has(key)) {
+            queries.push(pool.query(
+                `UPDATE course_timeslots SET room = ?, instructor = ? WHERE course_id = ? AND day = ? AND time = ?`,
+                [incoming.room, incoming.instructor, courseId, incoming.day, incoming.time]
+            ));
+        } else {
+            queries.push(pool.query(
+                `INSERT INTO course_timeslots (course_id, day, time, room, instructor) VALUES (?, ?, ?, ?, ?)`,
+                [courseId, incoming.day, incoming.time, incoming.room, incoming.instructor]
+            ));
+        }
+    }
+
+    for (const [key, existing] of existingMap.entries()) {
+        if (!incomingMap.has(key)) {
+            queries.push(pool.query(
+                `DELETE FROM course_timeslots WHERE id = ?`, 
+                [existing.id] 
+            ));
+        }
+    }
+
+    await Promise.all(queries);
 }
 
 export async function fetchCourses(
   campus: number = 0,
   part: number = 0, 
-  term: number = 0
+  term: number = 0,
+  course: string = ''
 ): Promise<void> {
     // Runs the python script
     let loginAttempts = 0;
@@ -149,7 +168,7 @@ export async function fetchCourses(
         }
     }
 
-    const classes = await fetch(campus, part, term);
+    const classes = await fetch(campus, part, term, course);
 
     if (!classes) {
         throw new Error('Parsing error.');
@@ -158,57 +177,53 @@ export async function fetchCourses(
     // Parses the output from the script
     const [courses, timeslots, enrollments] = classes;
     
-    console.log(`Courses: ${courses.length} | Timeslots: ${timeslots.length} | ${enrollments.length}`)
+    console.log(`Courses: ${courses.length} | Timeslots: ${timeslots.length} | Enrollments: ${enrollments.length}`)
+
+    const uniqueCourseNames = Array.from(new Set(courses.map((c: any) => c['courseName'])));
 
     let existingCourses: CourseInformation[] = [];
-    let fetchedCourseNames: string[] = [];
-    let currentCourseName: string;
+    for (const name of uniqueCourseNames as string[]) {
+        const fetchedCourses = await getAllCoursesByCourseName(name);
+        if (fetchedCourses) {
+            existingCourses.push(...fetchedCourses);
+        }
+    }
+
     const processedClasses = new Set<string>();
+    const newlyCreatedTracker = new Set<string>();
 
     // Main iteration for adding/updating courses
-    const updatePromises = courses.map(async (curr: any, index: number) => {
-        let currClass = {
-            courseName: curr['courseName'],
-            section: curr['section']
-        };
+    const updatePromises = courses.map(async (curr: any) => {
+        const courseName = curr['courseName'];
+        const section = curr['section'];
+        const classKey = `${courseName}|${section}`;
 
-        processedClasses.add(`${currClass['courseName']}|${currClass['section']}`);
+        processedClasses.add(classKey);
 
-        if (currClass['courseName'] !== currentCourseName) {
-            currentCourseName = currClass['courseName'];
-            if (!fetchedCourseNames.includes(currentCourseName)) {
-              let fetchedCourses = await getAllCoursesByCourseName(currentCourseName);
-              if (fetchedCourses) existingCourses.push(...fetchedCourses);
-              fetchedCourseNames.push(currentCourseName);
-            }
-        }
-
-        // Checks if this class exists in our DB fetch
         const existingSimilarCourse = existingCourses.find((c: CourseInformation) =>
-            c['courseName'] === currClass['courseName']
-            && c['section'] === currClass['section']
+            c['courseName'] === courseName && c['section'] === section
         );
 
         const currentEnrollment = enrollments.find((e: any) => e['courseId'] === curr['courseId']);
         const currentTimeslots = timeslots.filter((t: any) => t['courseId'] === curr['courseId']);
 
-        let courseId;
-
         if (existingSimilarCourse) {
-            courseId = existingSimilarCourse['id'];
-
             await updateCourse(
-                courseId,
+                existingSimilarCourse['id'],
                 curr,
                 currentEnrollment, 
                 currentTimeslots
             );
         } else {
-            courseId = await createCourse(
-                curr, 
-                currentEnrollment, 
-                currentTimeslots
-            ); 
+            // Check if another parallel iteration JUST created this class from a duplicate payload
+            if (!newlyCreatedTracker.has(classKey)) {
+                newlyCreatedTracker.add(classKey);
+                await createCourse(
+                    curr, 
+                    currentEnrollment, 
+                    currentTimeslots
+                ); 
+            }
         }
     });
 

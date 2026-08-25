@@ -4,10 +4,27 @@ import vanillaPuppeteer from 'puppeteer';
 import { addExtra } from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { createWorker } from 'tesseract.js';
+import { connect } from 'puppeteer-real-browser';
 
 const puppeteer = addExtra(vanillaPuppeteer as any);
 
 puppeteer.use(StealthPlugin());
+
+const BROWSER_CONFIG = {
+  args: [
+      '--disable-dev-shm-usage',
+      '--disable-blink-features=AutomationControlled',
+      '--window-size=1920,1080',
+      '--enable-gpu', 
+      '--enable-gpu-rasterization',
+      '--ignore-gpu-blocklist', 
+      '--enable-unsafe-webgpu',
+    ],
+    defaultViewport: {
+      width: 1920,
+      height: 1080
+    }
+}
 
 export async function isValidSession(): Promise<boolean> {
   // File checks — no browser needed for these
@@ -30,11 +47,12 @@ export async function isValidSession(): Promise<boolean> {
 
   // Only launch browser if cookie file looks valid
   const browser = await puppeteer.launch({ 
-    headless: true
+    headless: true,
+    ...BROWSER_CONFIG
   });
   
   const page = await browser.newPage();
-  page.setDefaultTimeout(600000);
+  page.setDefaultTimeout(300000);
 
   try {
     await browser.setCookie(...cookies);
@@ -56,12 +74,38 @@ export async function isValidSession(): Promise<boolean> {
 }
 
 export async function login() {
-  const browser = await puppeteer.launch({
-    headless: true
+  const { page, browser } = await connect({
+    headless: false,
+    ...BROWSER_CONFIG
   });
 
-  const page = await browser.newPage();
-  await page.setDefaultTimeout(600000);
+  await page.setDefaultTimeout(300000);
+
+  // Hook the site's own Turnstile success callback so we get an exact signal
+  // the moment a human solves it — this only *observes* the callback, it doesn't
+  // touch how the challenge itself is solved.
+  await page.evaluateOnNewDocument(() => {
+    (window as any).__turnstileSolved = false;
+    const originalCallbackName = 'onCloudflareTurnstileSuccess';
+
+    // Wrap the site's function once it's defined
+    Object.defineProperty(window, originalCallbackName, {
+      configurable: true,
+      set(fn) {
+        (window as any).__realTurnstileCallback = fn;
+      },
+      get() {
+        return (token: string) => {
+          (window as any).__turnstileSolved = true;
+          console.log('[page] Turnstile solved, token received');
+          if ((window as any).__realTurnstileCallback) {
+            (window as any).__realTurnstileCallback(token);
+          }
+        };
+      }
+    });
+  });
+
   await page.goto('https://archershub.dlsu.edu.ph');
 
   try {
@@ -70,44 +114,39 @@ export async function login() {
     // Searches html for selectors
     await page.waitForSelector('#txtuserid', { visible: true });
     await page.waitForSelector('#txtpassword', { visible: true });
-    await page.waitForSelector('#txtCaptchaTextLogin', { visible: true });
-    await page.waitForSelector('#captchaImageLogin', { visible: true });
     await page.waitForSelector('#btnSignIn', { visible: true });
     
     // Enters username and password
-    await page.type('#txtuserid', process.env.AH_USERNAME as string, { delay: 100 });
-    await page.type('#txtpassword', process.env.AH_PASSWORD as string, { delay: 100 });
+    await page.type('#txtuserid', process.env.AH_USERNAME as string, { delay: 300 });
+    await page.type('#txtpassword', process.env.AH_PASSWORD as string, { delay: 300 });
+    await page.click('#btnSignIn');
 
-    // Identifies captcha image and performs OCR
-    const element = await page.$('#captchaImageLogin');
-    await element?.screenshot({ path: 'captcha.png' });
+    await new Promise(r => setTimeout(r, 7500)); 
 
-    const worker = await createWorker('eng');
-    const captcha = await worker.recognize('./captcha.png');
-    await worker.terminate();
+    await new Promise(r => setTimeout(r, 7500)); 
 
-    // Enters captcha
-    await page.type('#txtCaptchaTextLogin', captcha.data.text, { delay: 100 });
-
-    // Enters OTP
-    await page.waitForSelector('#btnTwoStepVerifyOTP', { visible: true, timeout: 10000 });
-    await new Promise(r => setTimeout(r, 5000)); 
-    console.log("Fetching OTP.");
-    const otp = await otpFetch();
-
-    if (!otp) {
-      throw new Error("OTP not fetched successfully.");
-    }
-
-    await page.type('#txtTwoStepOTP', otp, { delay: 100 });
-    await page.click('#btnTwoStepVerifyOTP');
-
-    await page.setViewport({ width: 1920, height: 1080 });
-    await page.waitForSelector('#SPInsName', { visible: true, timeout: 15000 });
+    console.log("Waiting for next step (OTP or Dashboard)...");
     
-    console.log("Logging in to ArchersHub.");
+    // Wait for either the OTP field or the Dashboard to load
+    const nextStep = await Promise.race([
+        page.waitForSelector('#btnTwoStepVerifyOTP', { visible: true, timeout: 15000 }).then(() => 'OTP'),
+        page.waitForSelector('#SPInstLogo', { visible: true, timeout: 15000 }).then(() => 'DASHBOARD')
+    ]).catch(() => 'UNKNOWN');
 
-    await new Promise(r => setTimeout(r, 5000)); 
+    if (nextStep === 'OTP') {
+      console.log("OTP Required. Fetching OTP.");
+      await new Promise(r => setTimeout(r, 5000)); 
+      const otp = await otpFetch();
+      if (!otp) throw new Error("OTP not fetched successfully.");
+  
+      await page.type('#txtTwoStepOTP', otp, { delay: 100 });
+      await page.click('#btnTwoStepVerifyOTP');
+      
+      // Wait for dashboard after OTP
+      await page.waitForSelector('#SPInstLogo', { visible: true, timeout: 15000 });
+    } else if (nextStep === 'UNKNOWN') {
+      throw new Error("Failed to reach Dashboard or OTP screen.");
+    }
     
     console.log("Logged in to ArchersHub. Extracting cookies.");
 

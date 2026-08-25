@@ -8,19 +8,35 @@ const puppeteer = addExtra(vanillaPuppeteer as any);
 
 puppeteer.use(StealthPlugin());
 
+const BROWSER_CONFIG = {
+  args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-blink-features=AutomationControlled',
+      '--window-size=1920,1080',
+    ],
+    defaultViewport: {
+      width: 1920,
+      height: 1080
+    }
+}
+
 export async function fetch(
   campus: number = 0, 
   part: number = 0, 
-  term: number = 0
+  term: number = 0,
+  course: string = ''
 ): Promise<any[] | null> {
   let cookiesObj;
 
   const browser = await puppeteer.launch({ 
-    headless: true
+    headless: true,
+    ...BROWSER_CONFIG
   });
   
   const page = await browser.newPage();
-  page.setDefaultTimeout(600000);
+  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+  page.setDefaultTimeout(300000);
 
   // Checks if the cookies file exists
   if (!fs.existsSync('./ah-cookies.json')) {
@@ -71,7 +87,7 @@ export async function fetch(
 
   let sessionId = cookiesObj["__Secure-SID"];
 
-  const process = spawnSync('python3', ['./src/scripts/scraper.py', sessionId, campus, part, term], { 
+  const process = spawnSync('python3', ['./src/scripts/scraper.py', sessionId, campus, part, term, course], { 
     encoding: 'utf-8',
     maxBuffer: 1024 * 1024 * 1000
   });
