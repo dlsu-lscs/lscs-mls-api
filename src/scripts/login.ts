@@ -123,8 +123,6 @@ export async function login() {
 
     await new Promise(r => setTimeout(r, 7500)); 
 
-    await new Promise(r => setTimeout(r, 7500)); 
-
     console.log("Waiting for next step (OTP or Dashboard)...");
     
     // Wait for either the OTP field or the Dashboard to load
@@ -141,6 +139,8 @@ export async function login() {
   
       await page.type('#txtTwoStepOTP', otp, { delay: 100 });
       await page.click('#btnTwoStepVerifyOTP');
+
+      await new Promise(r => setTimeout(r, 5000)); 
       
       // Wait for dashboard after OTP
       await page.waitForSelector('#SPInstLogo', { visible: true, timeout: 15000 });
