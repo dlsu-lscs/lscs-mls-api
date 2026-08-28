@@ -115,7 +115,7 @@ export async function updateCourse(
     );
 
     const [existingRows] = await pool.query<RowDataPacket[]>(
-        `SELECT id, day, time, room, instructor FROM course_timeslots WHERE course_id = ?`, 
+        `SELECT tid, day, time, room, instructor FROM course_timeslots WHERE course_id = ?`, 
         [courseId]
     );
 
@@ -141,7 +141,7 @@ export async function updateCourse(
     for (const [key, existing] of existingMap.entries()) {
         if (!incomingMap.has(key)) {
             queries.push(pool.query(
-                `DELETE FROM course_timeslots WHERE id = ?`, 
+                `DELETE FROM course_timeslots WHERE tid = ?`, 
                 [existing.id] 
             ));
         }
