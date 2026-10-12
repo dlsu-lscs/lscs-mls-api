@@ -1,12 +1,12 @@
 import Fastify, { FastifyInstance } from "fastify";
 import dotenv from 'dotenv';
 import cors from '@fastify/cors';
+import { pool } from './db/index.js';
 
 
 dotenv.config();
 const port = Number(process.env.PORT) || 3000;
 const host = process.env.HOST || 'localhost';
-
 
 const app = Fastify({
   logger: true,
@@ -17,11 +17,27 @@ app.register(cors, {
 });
 
 
-app.get("/health", async () => {
-  return {
-    status: "ok",
-    version: "v2 powered by Fastify"
-  };
+app.get("/health", async (_request, reply) => {
+  try {
+    await pool.query("SELECT 1");
+    return {
+      status: "ok",
+      version: "v2 powered by Fastify",
+      checks: {
+        api: "ok",
+        database: "ok",
+      },
+    };
+  } catch {
+    return reply.status(503).send({
+      status: "degraded",
+      version: "v2 powered by Fastify",
+      checks: {
+        api: "ok",
+        database: "error",
+      },
+    });
+  }
 });
 
 /**TODO: Register APIv2 route plugins here 

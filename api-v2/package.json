@@ -18,7 +18,8 @@
     "dotenv": "^18.0.7",
     "drizzle-orm": "^0.45.4",
     "fastify": "^5.12.5",
-    "pg": "^8.23.1"
+    "pg": "^8.23.1",
+    "ph": "^0.1.10"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

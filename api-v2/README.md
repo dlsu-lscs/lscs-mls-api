@@ -5,13 +5,18 @@ npm run dev
 Launches a server that will hot reload upon a file change see `package.json` 
 
 
-
-## Migration changes so far 
+### Directory Changes
 `api-v2/` is an isolated directory that contains its own `package.json`. 
+
+
+### /health
+
+Is a trivial endpoint to test the current state of the server. `curl localhost:${port}/health` to run it 
 
 ### .env changes (if not mentioned assume old standard / unimplemented) 
 
-'DB_HOST' -changed to-> 'HOST' = a bit more descriptive
+`MODIFY` 'DB_HOST' -changed to-> 'HOST' = a bit more descriptive
+`NEW` 'DB_URL' = postgresql://<username>@localhost:5432/<db_name>
 
 
 ### From express to Fastify 
@@ -30,3 +35,5 @@ cors origin: 3001 --- taken from legacy configuration
 npm i drizzle-orm pg dotenv
 npm i -D drizzle-kit tsx @types/pg
 
+npm i fastify
+npm i -D typescript @types/node tsx
