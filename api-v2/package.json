@@ -19,5 +19,8 @@
     "drizzle-orm": "^0.45.4",
     "fastify": "^5.12.5",
     "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5"
   }
 }
