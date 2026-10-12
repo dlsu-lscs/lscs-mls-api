@@ -15,7 +15,8 @@ Is a trivial endpoint to test the current state of the server. `curl localhost:$
 
 ### .env changes (if not mentioned assume old standard / unimplemented) 
 
-`MODIFY` 'DB_HOST' -changed to-> 'HOST' = a bit more descriptive
+`MODIFY` 'DB_HOST' -changed to-> 'HOST' = a bit more descriptive 
+
 `NEW` 'DB_URL' = postgresql://<username>@localhost:5432/<db_name>
 
 

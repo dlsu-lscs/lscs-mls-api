@@ -2,7 +2,7 @@ import Fastify, { FastifyInstance } from "fastify";
 import dotenv from 'dotenv';
 import cors from '@fastify/cors';
 import { pool } from './db/index.js';
-
+import courseRoutes from "./routes/course.routes.js";
 
 dotenv.config();
 const port = Number(process.env.PORT) || 3000;
@@ -47,6 +47,7 @@ app.get("/health", async (_request, reply) => {
  * app.register(importControllerFile, {prefix: "/route/here"});
 **/
 
+app.register(courseRoutes, { prefix: "/courses" });
 
 
 const start = async () => {
