@@ -21,4 +21,12 @@ Launches a server that will hot reload upon a file change see `package.json`
 fastify uses its own plugin of cors compared to treating it as a middleware 
 `npm install @fastify/cors` if there seems to be issues with the cors 
 
-cors origin: 3001 --- taken from legacy configuration
+cors origin: 3001 --- taken from legacy configuration 
+
+
+
+
+## New Plugins 
+npm i drizzle-orm pg dotenv
+npm i -D drizzle-kit tsx @types/pg
+
