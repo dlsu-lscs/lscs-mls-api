@@ -17,6 +17,10 @@ export const courses = pgTable("courses", {
     length: 30,
   }).notNull(),
 
+  remarks: varchar("remarks", {
+    length: 255,
+  }),
+
   modality: varchar("modality", {
     length: 80,
   }).default(""),
