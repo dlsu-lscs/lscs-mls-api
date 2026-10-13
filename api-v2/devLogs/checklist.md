@@ -104,7 +104,7 @@
   - [ ] `deleteCourseByCourseName`
   - [ ] `getInstructorsByCourseName`
   - [x] ~~`getUniqueCampuses`~~ `commit #20ff2122`
-  - [ ] `getUniqueTerms`
+  - [x] ~~`getUniqueTerms`~~ `commit #730e6666`
   - [ ] `getCourseList`
 - [ ] Keep `fetchCourses`, 
 - [x] ~~`createCourse`~~,  `commit #55a33ce7`
