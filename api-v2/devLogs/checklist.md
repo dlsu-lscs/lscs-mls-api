@@ -103,13 +103,14 @@
   - [ ] `deleteCourse`
   - [ ] `deleteCourseByCourseName`
   - [ ] `getInstructorsByCourseName`
-  - [ ] `getUniqueCampuses`
+  - [x] ~~`getUniqueCampuses`~~ `commit #20ff2122`
   - [ ] `getUniqueTerms`
   - [ ] `getCourseList`
 - [ ] Keep `fetchCourses`, 
 - [x] ~~`createCourse`~~,  `commit #55a33ce7`
 - [x] ~~`getCourseById`~~, `commit #cc4301bf` -> latest refactoring change 
 - [x] ~~`getAllCoursesByCourseName`~~ `commit #25fc523e`
+
 
 ### Auth Service (`api-v2/src/service/auth.service.ts`)
 - [ ] Migrate functions from `services/auth.service.ts`

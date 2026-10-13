@@ -15,9 +15,6 @@ import type { CourseInformation } from "../dtos/course-information.dto.js";
 
 
 
-
-
-
 export async function createCourse(
   courseData: CreateCourse,
   enrollmentData: CreateCourseEnrollment,
@@ -84,6 +81,22 @@ export async function getAllCoursesByCourseName(
     .where(like(courses.courseName, `%${name}%`));
 
   return mapToCourseInformationDTO(rows);
+}
+
+
+export async function getUniqueTerms(): Promise<String[]> {
+  const rows = await db
+    .selectDistinct({ term: courses.term })
+    .from(courses)
+    .where(
+      and(
+        isNotNull(courses.term),
+        ne(courses.term, "")
+      )
+    )
+    .orderBy(asc(courses.term));
+
+  return rows.map(row => row.term!);
 }
 
 
