@@ -108,7 +108,7 @@
   - [ ] `getCourseList`
 - [ ] Keep `fetchCourses`, 
 - [x] ~~`createCourse`~~,  `commit #55a33ce7`
-- [x] ~~`getCourseById`~~, `commit #47044202`
+- [x] ~~`getCourseById`~~, `commit #cc4301bf` -> latest refactoring change 
 - [ ] `getAllCoursesByCourseName`
 
 ### Auth Service (`api-v2/src/service/auth.service.ts`)
