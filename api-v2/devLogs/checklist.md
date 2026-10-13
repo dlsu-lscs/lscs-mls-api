@@ -108,7 +108,7 @@
   - [ ] `getCourseList`
 - [ ] Keep `fetchCourses`, 
 - [x] ~~`createCourse`~~, 
-- [ ] `getCourseById`, 
+- [x] ~~`getCourseById`~~, 
 - [ ] `getAllCoursesByCourseName`
 
 ### Auth Service (`api-v2/src/service/auth.service.ts`)
@@ -116,13 +116,6 @@
   - `googleAuth2`
 - [ ] Check axios usage (vs fetch API for v2)
 - [ ] Update JWT token handling (ensure consistent with v1)
-
-### ArchersHub Service (`api-v2/src/service/archershub.service.ts`)
-- [ ] Migrate functions from `services/archershub.service.ts`
-  - `getCampuses`
-  - `getTerms`
-  - `getCourseList`
-- [ ] Check imports from `scripts/archershub.js`
 
 ---
 
