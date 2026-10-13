@@ -107,7 +107,7 @@
   - [ ] `getUniqueTerms`
   - [ ] `getCourseList`
 - [ ] Keep `fetchCourses`, 
-- [x] `createCourse`, 
+- [x] ~~`createCourse`~~, 
 - [ ] `getCourseById`, 
 - [ ] `getAllCoursesByCourseName`
 
