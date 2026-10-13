@@ -1,5 +1,5 @@
 import { db } from "../db/index.js";
-import { and, asc, isNotNull, ne, eq } from "drizzle-orm";
+import { and, asc, isNotNull, ne, eq, like } from "drizzle-orm";
 
 
 import { courses } from "../db/schema/courses.js";
@@ -73,7 +73,18 @@ export async function getCourseById(
   return results[0] ?? null;
 }
 
+export async function getAllCoursesByCourseName(
+  name: string
+): Promise<CourseInformation[]> {
+  const rows = await db
+    .select()
+    .from(courses)
+    .leftJoin(courseEnrollments, eq(courses.cid, courseEnrollments.eid))
+    .leftJoin(courseTimeslots, eq(courses.cid, courseTimeslots.tid))
+    .where(like(courses.courseName, `%${name}%`));
 
+  return mapToCourseInformationDTO(rows);
+}
 
 
 
