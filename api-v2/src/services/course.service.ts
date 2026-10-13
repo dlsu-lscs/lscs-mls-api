@@ -84,7 +84,7 @@ export async function getAllCoursesByCourseName(
 }
 
 
-export async function getUniqueTerms(): Promise<String[]> {
+export async function getUniqueTerms(): Promise<string[]> {
   const rows = await db
     .selectDistinct({ term: courses.term })
     .from(courses)
@@ -99,7 +99,21 @@ export async function getUniqueTerms(): Promise<String[]> {
   return rows.map(row => row.term!);
 }
 
+export async function getCourseList(): Promise<string[]> {
 
+  const rows = await db
+    .selectDistinct({ courseName: courses.courseName })
+    .from(courses)
+    .where(
+      and(
+        isNotNull(courses.courseName),
+        ne(courses.courseName, "")
+      )
+    )
+    .orderBy(asc(courses.courseName));
+
+  return rows.map((row) => row.courseName);
+}
 
 
 
