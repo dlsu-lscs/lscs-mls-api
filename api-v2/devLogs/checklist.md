@@ -105,7 +105,7 @@
   - [ ] `getInstructorsByCourseName`
   - [x] ~~`getUniqueCampuses`~~ `commit #20ff2122`
   - [x] ~~`getUniqueTerms`~~ `commit #730e6666`
-  - [ ] `getCourseList`
+  - [x] ~~`getCourseList`~~ `commit #6a29423f`
 - [ ] Keep `fetchCourses`, 
 - [x] ~~`createCourse`~~,  `commit #55a33ce7`
 - [x] ~~`getCourseById`~~, `commit #cc4301bf` -> latest refactoring change 
