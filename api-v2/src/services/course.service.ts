@@ -67,7 +67,10 @@ export async function getCourseById(
     .leftJoin(courseTimeslots, eq(courses.cid, courseTimeslots.tid))
     .where(eq(courses.cid, id));
 
-  return mapToCourseInformationDTO(rows);
+
+  const results = mapToCourseInformationDTO(rows);
+
+  return results[0] ?? null;
 }
 
 

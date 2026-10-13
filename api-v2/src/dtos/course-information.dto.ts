@@ -19,24 +19,45 @@ type CourseInformationRow = {
 
 export function mapToCourseInformationDTO(
   dbRows: CourseInformationRow[]
-): CourseInformation | null {
-  if (dbRows.length === 0) {
-    return null;
-  }
-
-  const course = dbRows[0].courses;
-  const enrollment = dbRows[0].course_enrollments;
-
-  const timeslots = new Map<
-    number,
-    Omit<CourseTimeslot, "courseId">
-  >();
+): CourseInformation[] {
+  const coursesMap = new Map<number, CourseInformation>();
 
   for (const row of dbRows) {
+    const course = row.courses;
+    const enrollment = row.course_enrollments;
     const timeslot = row.course_timeslots;
 
-    if (timeslot && !timeslots.has(timeslot.tid)) {
-      timeslots.set(timeslot.tid, {
+    if (!coursesMap.has(course.cid)) {
+      coursesMap.set(course.cid, {
+        id: course.cid,
+        courseName: course.courseName,
+        section: course.section,
+        remarks: course.remarks ?? undefined,
+        modality: course.modality ?? undefined,
+        term: course.term ?? undefined,
+        campus: course.campus ?? undefined,
+
+        status: enrollment
+          ? {
+            id: enrollment.eid,
+            enrollCap: enrollment.enrollCap ?? undefined,
+            enrolled: enrollment.enrolled ?? undefined,
+          }
+          : null,
+
+        timeslots: [],
+      });
+    }
+
+    const courseInfo = coursesMap.get(course.cid)!;
+
+    if (
+      timeslot &&
+      !courseInfo.timeslots.some(
+        (existing) => existing.id === timeslot.tid
+      )
+    ) {
+      courseInfo.timeslots.push({
         id: timeslot.tid,
         day: timeslot.day,
         time: timeslot.time,
@@ -46,23 +67,5 @@ export function mapToCourseInformationDTO(
     }
   }
 
-  return {
-    id: course.cid,
-    courseName: course.courseName,
-    section: course.section,
-    remarks: course.remarks ?? undefined,
-    modality: course.modality ?? undefined,
-    term: course.term ?? undefined,
-    campus: course.campus ?? undefined,
-
-    status: enrollment
-      ? {
-        id: enrollment.eid,
-        enrollCap: enrollment.enrollCap ?? undefined,
-        enrolled: enrollment.enrolled ?? undefined,
-      }
-      : null,
-
-    timeslots: Array.from(timeslots.values()),
-  };
+  return Array.from(coursesMap.values());
 }
