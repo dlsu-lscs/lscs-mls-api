@@ -74,24 +74,18 @@
   - `handleAuthentication`
   - `handleCallback`
 
-### ArchersHub Controller (`api-v2/src/controller/archershub.controller.ts`)
-- [ ] Migrate functions from `controllers/archershub.controller.ts`
-  - `getCampuses`
-  - `getTerms`
-  - `getCourseList`
-
 ---
 
 ## 3️⃣ SERVICES TO MIGRATE
 
 ### User Service (`api-v2/src/service/user.service.ts`)
 - [ ] Migrate functions from `services/user.service.ts`
-  - `getUserByUserId` (helper)
-  - `createUser`
-  - `getAllUsers`
-  - `getUserById`
-  - `updateUser`
-  - `deleteUser`
+  - [ ] `getUserByUserId` (helper)
+  - [ ] `createUser`
+  - [ ] `getAllUsers`
+  - [ ] `getUserById`
+  - [ ] `updateUser`
+  - [ ] `deleteUser`
 - [ ] Update database connectivity from MySQL to PostgreSQL/Drizzle
 - [ ] Fix DTO mapping (uid → uid, use Drizzle ORM)
 
@@ -105,17 +99,17 @@
 
 ### Course Service (`api-v2/src/service/course.service.ts`)
 - [ ] Migrate functions from `services/course.service.ts`
-  - `updateCourse`
-  - `deleteCourse`
-  - `deleteCourseByCourseName`
-  - `getInstructorsByCourseName`
-  - `getUniqueCampuses`
-  - `getUniqueTerms`
-  - `getCourseList`
-- [ ] Keep `fetchCourses`, `createCourse`, `getCourseById`, `getAllCoursesByCourseName`
-  - These are complex, consider if they should stay as-is or be refactored
-- [ ] Update database connectivity from MySQL to PostgreSQL/Drizzle
-- [ ] Update MySQL-specific syntax (LIMIT, wildcards, joins)
+  - [ ] `updateCourse`
+  - [ ] `deleteCourse`
+  - [ ] `deleteCourseByCourseName`
+  - [ ] `getInstructorsByCourseName`
+  - [ ] `getUniqueCampuses`
+  - [ ] `getUniqueTerms`
+  - [ ] `getCourseList`
+- [ ] Keep `fetchCourses`, 
+- [x] `createCourse`, 
+- [ ] `getCourseById`, 
+- [ ] `getAllCoursesByCourseName`
 
 ### Auth Service (`api-v2/src/service/auth.service.ts`)
 - [ ] Migrate functions from `services/auth.service.ts`
