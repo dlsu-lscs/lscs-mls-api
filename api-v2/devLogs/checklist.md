@@ -107,8 +107,8 @@
   - [ ] `getUniqueTerms`
   - [ ] `getCourseList`
 - [ ] Keep `fetchCourses`, 
-- [x] ~~`createCourse`~~, 
-- [x] ~~`getCourseById`~~, 
+- [x] ~~`createCourse`~~,  `commit #55a33ce7`
+- [x] ~~`getCourseById`~~, `commit #47044202`
 - [ ] `getAllCoursesByCourseName`
 
 ### Auth Service (`api-v2/src/service/auth.service.ts`)
