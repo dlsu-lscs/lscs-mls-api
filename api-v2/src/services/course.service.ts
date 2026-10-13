@@ -1,14 +1,22 @@
 import { db } from "../db/index.js";
-import { and, asc, isNotNull, ne } from "drizzle-orm";
+import { and, asc, isNotNull, ne, eq } from "drizzle-orm";
 
 
 import { courses } from "../db/schema/courses.js";
 import { courseEnrollments } from "../db/schema/course_enrollments.js";
 import { courseTimeslots } from "../db/schema/course_timeslots.js";
+import { mapToCourseInformationDTO } from "../dtos/course-information.dto.js";
+
 
 import type { CreateCourse } from "../dtos/course.dto.js";
 import type { CreateCourseEnrollment } from "../dtos/course-enrollment.dto.js";
 import type { CreateCourseTimeslot } from "../dtos/course-timeslot.dto.js";
+import type { CourseInformation } from "../dtos/course-information.dto.js";
+
+
+
+
+
 
 export async function createCourse(
   courseData: CreateCourse,
@@ -30,7 +38,6 @@ export async function createCourse(
       .returning({ id: courses.cid });
 
     const courseId = createdCourse.id;
-
     await tx.insert(courseEnrollments).values({
       enrollCap: enrollmentData.enrollCap,
       enrolled: enrollmentData.enrolled,
@@ -50,7 +57,18 @@ export async function createCourse(
   });
 }
 
+export async function getCourseById(
+  id: number
+): Promise<CourseInformation | null> {
+  const rows = await db
+    .select()
+    .from(courses)
+    .leftJoin(courseEnrollments, eq(courses.cid, courseEnrollments.eid))
+    .leftJoin(courseTimeslots, eq(courses.cid, courseTimeslots.tid))
+    .where(eq(courses.cid, id));
 
+  return mapToCourseInformationDTO(rows);
+}
 
 
 
