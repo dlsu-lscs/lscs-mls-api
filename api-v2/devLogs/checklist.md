@@ -102,7 +102,7 @@
   - [ ] `updateCourse`
   - [ ] `deleteCourse`
   - [ ] `deleteCourseByCourseName`
-  - [ ] `getInstructorsByCourseName`
+  - [x] ~~`getInstructorsByCourseName`~~ `commit #acb8324`
   - [x] ~~`getUniqueCampuses`~~ `commit #20ff2122`
   - [x] ~~`getUniqueTerms`~~ `commit #730e6666`
   - [x] ~~`getCourseList`~~ `commit #6a29423f`
