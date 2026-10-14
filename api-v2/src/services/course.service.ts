@@ -62,7 +62,7 @@ export async function getInstructorsByCourseName(name: string): Promise<(string 
   const rows = await db
     .selectDistinct({ instructor: courseTimeslots.instructor })
     .from(courseTimeslots)
-    .innerJoin(courses, eq(courses.cid, courseTimeslots.tid))
+    .innerJoin(courses, eq(courses.cid, courseTimeslots.courseId))
     .where(like(courses.courseName, `${name}`));
 
   return rows.map((row) => row.instructor);
@@ -186,8 +186,8 @@ export async function getCourseById(
   const rows = await db
     .select()
     .from(courses)
-    .leftJoin(courseEnrollments, eq(courses.cid, courseEnrollments.eid))
-    .leftJoin(courseTimeslots, eq(courses.cid, courseTimeslots.tid))
+    .leftJoin(courseEnrollments, eq(courses.cid, courseEnrollments.courseId))
+    .leftJoin(courseTimeslots, eq(courses.cid, courseTimeslots.courseId))
     .where(eq(courses.cid, id));
 
 
@@ -202,14 +202,18 @@ export async function getAllCoursesByCourseName(
   const rows = await db
     .select()
     .from(courses)
-    .leftJoin(courseEnrollments, eq(courses.cid, courseEnrollments.eid))
-    .leftJoin(courseTimeslots, eq(courses.cid, courseTimeslots.tid))
+    .leftJoin(
+      courseEnrollments,
+      eq(courses.cid, courseEnrollments.courseId)
+    )
+    .leftJoin(
+      courseTimeslots,
+      eq(courses.cid, courseTimeslots.courseId)
+    )
     .where(like(courses.courseName, `%${name}%`));
 
   return mapToCourseInformationDTO(rows);
 }
-
-
 
 
 
