@@ -54,6 +54,21 @@ export async function createCourse(
   });
 }
 
+
+export async function getInstructorsByCourseName(name: string): Promise<(string | null)[]> {
+
+  const rows = await db
+    .selectDistinct({ instructor: courseTimeslots.instructor })
+    .from(courseTimeslots)
+    .innerJoin(courses, eq(courses.cid, courseTimeslots.tid))
+    .where(like(courses.courseName, `${name}`));
+
+  return rows.map((row) => row.instructor);
+
+}
+
+
+
 export async function getCourseById(
   id: number
 ): Promise<CourseInformation | null> {
