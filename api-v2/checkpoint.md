@@ -95,11 +95,17 @@ src/dtos/
   └── user.dto.ts                         # Exists
 ```
 
-### 5. Routes & Controllers (Partial)
+### 5. Routes & Controllers (Partially Complete)
+**User Module**:
+- ✅ `src/controller/user.controller.ts` - All CRUD functions migrated and working
+- ✅ `src/routes/user.routes.ts` - All CRUD routes registered at `/users`
+- ✅ Routes registered in `src/index.ts`
+
+**Course Routes** <<⋔ TODO<<(register remaining endpoints)
 **File**: `src/routes/course.routes.ts` (8 lines)
 - ✅ GET `/campuses` → `getCampuses`
 
-**File**: `src/controller/course.controller.ts` (18 lines)
+**Course Controller**:
 - ✅ `getCampuses()` function complete
 
 **Missing**:
@@ -159,6 +165,12 @@ export async function getCourseList() { ... }
 
 ## 🔧 RECENT MIGRATIONS
 
+**User Controller & Routes Migration** (2026-10-19):
+- Migrated `api-v2/src/controller/user.controller.ts` from Express to Fastify (`FastifyReply`, `FastifyRequest`)
+- Created `api-v2/src/routes/user.routes.ts` with Fastify plugin pattern
+- Registered `userRoutes` with prefix `/users` in `api-v2/src/index.ts`
+- Live-tested all 6 endpoints via curl against running dev server ✅
+
 **User Service Migration** (2026-10-19):
 - Migrated all user service functions from MySQL/raw SQL to PostgreSQL/Drizzle
 - Updated `api-v2/src/services/user.service.ts` with 6 CRUD functions
@@ -192,17 +204,17 @@ export async function getCourseList() { ... }
 | User DTOs | 100% | ✅ Complete |
 | User Service | 100% | ✅ Complete |
 | User Tests | 100% | ✅ Complete |
+| User Controller | 100% | ✅ Complete |
+| User Routes | 100% | ✅ Complete |
 | Course DTOs | 100% | ✅ Complete |
 | Course Service | 100% | ✅ Complete |
 | Course Tests | 100% | ✅ Complete |
 | Course Routes | 20% | ⚠️ Partial |
 | Course Controller | 14% | ⚠️ Partial |
-| User Controller | 0% | 🔴 Not started |
-| User Routes | 0% | 🔴 Not started |
 | Auth Service | 0% | 🔴 Not started |
 | Auth Controller | 0% | 🔴 Not started |
 | Auth Routes | 0% | 🔴 Not started |
-| Overall API | ~70% | 🟧 In progress |
+| Overall API | ~75% | 🟧 In progress |
 
 ---
 

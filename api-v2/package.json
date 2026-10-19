@@ -5,7 +5,10 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "tsx testScripts/run-user-tests.ts",
+    "test:user": "tsx testScripts/run-user-tests.ts",
+    "test:user:service": "tsx testScripts/user.service.test.ts",
+    "test:user:controller": "tsx testScripts/user.controller.test.ts",
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.ts"

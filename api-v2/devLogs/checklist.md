@@ -9,8 +9,8 @@
 
 ## 1️⃣ ROUTES TO MIGRATE
 
-### User Routes (`api-v2/src/routes/user.routes.ts`)
-- [ ] Create route file
+### User Routes (`api-v2/src/routes/user.routes.ts`) ✅ CREATED
+- [x] Create route file
   - `POST /users` → createUser
   - `GET /users` → getAllUsers
   - `GET /users/:id` → getUserById
@@ -46,8 +46,8 @@
 
 ## 2️⃣ CONTROLLERS TO MIGRATE
 
-### User Controller (`api-v2/src/controller/user.controller.ts`)
-- [ ] Migrate functions from `controllers/user.controller.ts`
+### User Controller (`api-v2/src/controller/user.controller.ts`) ✅ MIGRATED
+- [x] Migrate functions from `controllers/user.controller.ts`
   - `createUser`
   - `getUserById`
   - `deleteUser`
@@ -163,8 +163,9 @@
 
 ## 5️⃣ ROUTER REGISTRATION (`api-v2/src/index.ts`)
 
-- [ ] Add dependent route imports at top
-- [ ] Register all routes with appropriate prefixes
+- [x] Add dependent route imports at top
+- [x] Register user routes with prefix `/users`
+- [ ] Register remaining routes with appropriate prefixes
   ```typescript
   import userRoutes from "./routes/user.routes.js";
   import courseRoutes from "./routes/course.routes.js";
