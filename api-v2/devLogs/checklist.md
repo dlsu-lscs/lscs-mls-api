@@ -17,8 +17,8 @@
   - `PUT /users/:id` → updateUser
   - `DELETE /users/:id` → deleteUser
 
-### Course Routes (`api-v2/src/routes/course.routes.ts`)
-- [ ] Expand existing routes file (currently only `/campuses`)
+### Course Routes (`api-v2/src/routes/course.routes.ts`) ✅ COMPLETED
+- [x] Expand existing routes file (currently only `/campuses`)
   - `POST /courses/fetch` → fetchCourses
   - `GET /courses/search/:courseName` → getAllCoursesByCourseName
   - `GET /courses/id/:id` → getCourseById
@@ -60,8 +60,8 @@
   - `getAllUserSelectedCourse`
   - `deleteSelectedCourse`
 
-### Course Controller (`api-v2/src/controller/course.controller.ts`)
-- [ ] Migrate functions from `controllers/course.controller.ts`
+### Course Controller (`api-v2/src/controller/course.controller.ts`) ✅ MIGRATED
+- [x] Migrate functions from `controllers/course.controller.ts`
   - `fetchCourses`
   - `getCourseById`
   - `getAllCoursesByCourseName`
@@ -98,19 +98,20 @@
 - [ ] Update database connectivity from MySQL to PostgreSQL/Drizzle
 - [ ] Update imports for dependencies
 
-### Course Service (`api-v2/src/service/course.service.ts`)
-- [ ] Migrate functions from `services/course.service.ts`
-  - [ ] `updateCourse`
-  - [ ] `deleteCourse`
-  - [ ] `deleteCourseByCourseName`
-  - [x] ~~`getInstructorsByCourseName`~~ `commit #acb8324`
-  - [x] ~~`getUniqueCampuses`~~ `commit #20ff2122`
-  - [x] ~~`getUniqueTerms`~~ `commit #730e6666`
-  - [x] ~~`getCourseList`~~ `commit #6a29423f`
-- [ ] Keep `fetchCourses`, 
-- [x] ~~`createCourse`~~,  `commit #55a33ce7`
-- [x] ~~`getCourseById`~~, `commit #cc4301bf` -> latest refactoring change 
-- [x] ~~`getAllCoursesByCourseName`~~ `commit #25fc523e`
+### Course Service (`api-v2/src/service/course.service.ts`) ✅ MIGRATED & TESTED
+- [x] Migrate functions from `services/course.service.ts`
+  - [x] `updateCourse`
+  - [x] `deleteCourse`
+  - [x] `deleteCourseByCourseName`
+  - [x] `getInstructorsByCourseName` `commit #acb8324`
+  - [x] `getUniqueCampuses` `commit #20ff2122`
+  - [x] `getUniqueTerms` `commit #730e6666`
+  - [x] `getCourseList` `commit #6a29423f`
+- [x] Keep `fetchCourses` (complex scraper integration) 
+- [x] `createCourse`  `commit #55a33ce7`
+- [x] `getCourseById`  `commit #cc4301bf` -> latest refactoring change 
+- [x] `getAllCoursesByCourseName`  `commit #25fc523e`
+- Test script: `testScripts/run-course-tests.ts` ✅
 
 
 ### Auth Service (`api-v2/src/service/auth.service.ts`)
@@ -165,7 +166,7 @@
 
 - [x] Add dependent route imports at top
 - [x] Register user routes with prefix `/users`
-- [ ] Register remaining routes with appropriate prefixes
+- [x] Register remaining routes with appropriate prefixes
   ```typescript
   import userRoutes from "./routes/user.routes.js";
   import courseRoutes from "./routes/course.routes.js";

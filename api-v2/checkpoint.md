@@ -95,25 +95,18 @@ src/dtos/
   └── user.dto.ts                         # Exists
 ```
 
-### 5. Routes & Controllers (Partially Complete)
+### 5. Routes & Controllers (Completed)
 **User Module**:
 - ✅ `src/controller/user.controller.ts` - All CRUD functions migrated and working
 - ✅ `src/routes/user.routes.ts` - All CRUD routes registered at `/users`
 - ✅ Routes registered in `src/index.ts`
 
-**Course Routes** <<⋔ TODO<<(register remaining endpoints)
-**File**: `src/routes/course.routes.ts` (8 lines)
-- ✅ GET `/campuses` → `getCampuses`
+**Course Module**:
+- ✅ `src/controller/course.controller.ts` - All functions migrated and working
+- ✅ `src/routes/course.routes.ts` - All routes registered at `/courses`
+- ✅ Routes registered in `src/index.ts`
 
-**Course Controller**:
-- ✅ `getCampuses()` function complete
-
-**Missing**:
-- ❌ POST `/courses/fetch` → `fetchCourses` (Complex scraper logic)
-- ❌ GET `/courses/search/:courseName` → `getAllCoursesByCourseName` (Service exists, route missing)
-- ❌ GET `/courses/id/:id` → `getCourseById` (Service exists, route missing)
-- ❌ GET `/courses/terms` → `getTerms` (Rename of `getUniqueTerms`, route missing)
-- ❌ GET `/courses/list` → `getCourseList` (Rename of `getCourseList`, route missing)
+**All routes and controllers for User and Course modules are now fully migrated.**
 
 ---
 
@@ -209,12 +202,12 @@ export async function getCourseList() { ... }
 | Course DTOs | 100% | ✅ Complete |
 | Course Service | 100% | ✅ Complete |
 | Course Tests | 100% | ✅ Complete |
-| Course Routes | 20% | ⚠️ Partial |
-| Course Controller | 14% | ⚠️ Partial |
+| Course Routes | 100% | ✅ Complete |
+| Course Controller | 100% | ✅ Complete |
 | Auth Service | 0% | 🔴 Not started |
 | Auth Controller | 0% | 🔴 Not started |
 | Auth Routes | 0% | 🔴 Not started |
-| Overall API | ~75% | 🟧 In progress |
+| Overall API | ~80% | 🟧 In progress |
 
 ---
 
