@@ -1,12 +1,10 @@
 import { db } from "../db/index.js";
 import { and, asc, isNotNull, ne, eq, like } from "drizzle-orm";
 
-
 import { courses } from "../db/schema/courses.js";
 import { courseEnrollments } from "../db/schema/course_enrollments.js";
 import { courseTimeslots } from "../db/schema/course_timeslots.js";
 import { mapToCourseInformationDTO } from "../dtos/course-information.dto.js";
-
 
 import type { CreateCourse } from "../dtos/course.dto.js";
 import type { CreateCourseEnrollment } from "../dtos/course-enrollment.dto.js";
@@ -23,7 +21,6 @@ export async function createCourse(
   timeslotData: CreateCourseTimeslot[],
 ): Promise<void> {
   await db.transaction(async (tx) => {
-
     const [createdCourse] = await tx
       .insert(courses)
       .values({
@@ -52,13 +49,10 @@ export async function createCourse(
         courseId,
       });
     }
-
   });
 }
 
-
 export async function getInstructorsByCourseName(name: string): Promise<(string | null)[]> {
-
   const rows = await db
     .selectDistinct({ instructor: courseTimeslots.instructor })
     .from(courseTimeslots)
@@ -66,9 +60,7 @@ export async function getInstructorsByCourseName(name: string): Promise<(string 
     .where(like(courses.courseName, `${name}`));
 
   return rows.map((row) => row.instructor);
-
 }
-
 
 export async function updateCourse(
   courseId: number,
@@ -86,34 +78,23 @@ export async function updateCourse(
       campus,
     } = newCourseData;
 
-
-    // ---- course udpate -----
     const courseUpdates = { courseName, section, remarks, modality, term, campus };
-
     const definedCourseUpdates = Object.fromEntries(
-      Object.entries(courseUpdates).filter(([_, value]) => value !== undefined));
-
-
+      Object.entries(courseUpdates).filter(([_, value]) => value !== undefined)
+    );
 
     if (Object.keys(definedCourseUpdates).length > 0) {
       await tx
         .update(courses)
         .set(definedCourseUpdates)
-        .where(eq(courses.cid, courseId))
+        .where(eq(courses.cid, courseId));
     }
-
-    // ---- enrollment data -----
 
     const { enrollCap, enrolled } = newEnrollmentData;
-
-    const enrollmentUpdates = {
-      enrollCap,
-      enrolled,
-    }
-
+    const enrollmentUpdates = { enrollCap, enrolled };
     const definedEnrollmentUpdates = Object.fromEntries(
-      Object.entries(enrollmentUpdates).filter(([_, value]) => value !== undefined));
-
+      Object.entries(enrollmentUpdates).filter(([_, value]) => value !== undefined)
+    );
 
     if (Object.keys(definedEnrollmentUpdates).length > 0) {
       await tx
@@ -122,14 +103,10 @@ export async function updateCourse(
         .where(eq(courseEnrollments.courseId, courseId));
     }
 
-
-    // time table
-
     const existingRows = await tx
       .select({ tid: courseTimeslots.tid, day: courseTimeslots.day, time: courseTimeslots.time })
       .from(courseTimeslots)
       .where(eq(courseTimeslots.courseId, courseId));
-
 
     const existingMap = new Map(
       existingRows.map((row) => [`${row.day}|${row.time}`, row])
@@ -172,13 +149,97 @@ export async function updateCourse(
           .where(eq(courseTimeslots.tid, existing.tid));
       }
     }
-
-  })
-
+  });
 }
 
+export async function fetchCourses(
+  campus: number = 0,
+  part: number = 0,
+  term: number = 0,
+  course: string = ''
+): Promise<void> {
+  // @ts-ignore
+  const { isValidSession, login } = await import("../scripts/login.js");
+  // @ts-ignore
+  const { fetch } = await import("../scripts/fetch.js");
 
+  let loginAttempts = 0;
+  while (!await isValidSession()) {
+    if (loginAttempts++ >= 3) throw new Error('Login');
+    try {
+      await login();
+    } catch (e: any) {
+      console.error('Login attempt failed:', e);
+      throw new Error('Login');
+    }
+  }
 
+  const classes = await fetch(campus, part, term, course);
+  if (!classes) {
+    throw new Error('Parsing error.');
+  }
+
+  const [coursesList, timeslots, enrollments] = classes;
+  console.log(`Courses: ${coursesList.length} | Timeslots: ${timeslots.length} | Enrollments: ${enrollments.length}`);
+
+  const uniqueCourseNames = Array.from(new Set(coursesList.map((c: any) => c['courseName'])));
+
+  let existingCourses: CourseInformation[] = [];
+  for (const name of uniqueCourseNames as string[]) {
+    const fetchedCourses = await getAllCoursesByCourseName(name);
+    if (fetchedCourses) {
+      existingCourses.push(...fetchedCourses);
+    }
+  }
+
+  const processedClasses = new Set<string>();
+  const newlyCreatedTracker = new Set<string>();
+
+  const updatePromises = coursesList.map(async (curr: any) => {
+    const courseName = curr['courseName'];
+    const section = curr['section'];
+    const classKey = `${courseName}|${section}`;
+
+    processedClasses.add(classKey);
+
+    const existingSimilarCourse = existingCourses.find((c: CourseInformation) =>
+      c['courseName'] === courseName && c['section'] === section
+    );
+
+    const currentEnrollment = enrollments.find((e: any) => e['courseId'] === curr['courseId']);
+    const currentTimeslots = timeslots.filter((t: any) => t['courseId'] === curr['courseId']);
+
+    if (existingSimilarCourse) {
+      await updateCourse(
+        existingSimilarCourse['id'],
+        curr,
+        currentEnrollment,
+        currentTimeslots
+      );
+    } else {
+      if (!newlyCreatedTracker.has(classKey)) {
+        newlyCreatedTracker.add(classKey);
+        await createCourse(
+          curr,
+          currentEnrollment,
+          currentTimeslots
+        );
+      }
+    }
+  });
+
+  await Promise.all(updatePromises);
+
+  const coursesToDelete = existingCourses.filter((c: any) =>
+    !processedClasses.has(`${c['courseName']}|${c['section']}`)
+  );
+
+  for (const curr of coursesToDelete) {
+    await deleteCourse(curr['id']);
+  }
+
+  console.log(`Courses fetched.`);
+}
 
 export async function getCourseById(
   id: number
@@ -190,9 +251,7 @@ export async function getCourseById(
     .leftJoin(courseTimeslots, eq(courses.cid, courseTimeslots.courseId))
     .where(eq(courses.cid, id));
 
-
   const results = mapToCourseInformationDTO(rows);
-
   return results[0] ?? null;
 }
 
@@ -215,11 +274,6 @@ export async function getAllCoursesByCourseName(
   return mapToCourseInformationDTO(rows);
 }
 
-
-
-
-
-
 export async function getUniqueTerms(): Promise<string[]> {
   const rows = await db
     .selectDistinct({ term: courses.term })
@@ -236,7 +290,6 @@ export async function getUniqueTerms(): Promise<string[]> {
 }
 
 export async function getCourseList(): Promise<string[]> {
-
   const rows = await db
     .selectDistinct({ courseName: courses.courseName })
     .from(courses)
@@ -250,9 +303,6 @@ export async function getCourseList(): Promise<string[]> {
 
   return rows.map((row) => row.courseName);
 }
-
-
-
 
 export async function getUniqueCampuses(): Promise<string[]> {
   const rows = await db
@@ -269,5 +319,12 @@ export async function getUniqueCampuses(): Promise<string[]> {
   return rows.map(row => row.campus!);
 }
 
+export async function deleteCourse(id: number): Promise<boolean> {
+  const result = await db.delete(courses).where(eq(courses.cid, id));
+  return (result.rowCount ?? 0) > 0;
+}
 
-
+export async function deleteCourseByCourseName(name: string): Promise<boolean> {
+  const result = await db.delete(courses).where(like(courses.courseName, `%${name}%`));
+  return (result.rowCount ?? 0) > 0;
+}

@@ -5,8 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "tsx testScripts/run-user-tests.ts",
+    "test": "tsx testScripts/run-user-tests.ts && tsx testScripts/run-course-tests.ts",
     "test:user": "tsx testScripts/run-user-tests.ts",
+    "test:course": "tsx testScripts/run-course-tests.ts",
     "test:user:service": "tsx testScripts/user.service.test.ts",
     "test:user:controller": "tsx testScripts/user.controller.test.ts",
     "dev": "tsx watch src/index.ts",
