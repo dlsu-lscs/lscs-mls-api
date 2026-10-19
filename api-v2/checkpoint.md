@@ -9,12 +9,13 @@
 
 This checkpoint documents the current state of the api-v2 migration from Express/MySQL to Fastify/PostgreSQL (Drizzle ORM).
 
-**Current Progress**: ~65% complete
+**Current Progress**: ~70% complete
 - ✅ Database schema defined and working
-- ✅ Core course services fully implemented and tested
+- ✅ Course services fully implemented and tested
+- ✅ User service fully implemented and tested ✅ NEW
 - ✅ DTOs created and verified
 - ⏳ Routes and controllers need expansion
-- ⏳ User and Auth services still pending
+- ⏳ Auth services still pending
 
 ---
 
@@ -39,10 +40,27 @@ src/db/schema/
   ├── courses.ts              # ✓ Verified
   ├── course_enrollments.ts   # ✓ Verified
   ├── course_timeslots.ts     # ✓ Verified
-  ├── users.ts                # Exists
+  ├── users.ts                # ✓ Verified
   └── selected-courses.ts     # Exists
 ```
 **Status**: All schemas defined with Drizzle ORM, foreign key relationships verified.
+
+### 2. User Service (100% implemented, tested) ✅ NEW
+**File**: `src/services/user.service.ts` (84 lines)
+
+**Fully implemented functions** (all tested):
+- ✅ `createUser(userId)` - Checks uniqueness by userId, inserts, returns User
+- ✅ `getAllUsers()` - Returns all users
+- ✅ `getUserById(id)` - Finds by uid (Drizzle IDs auto-map to `uid`)
+- ✅ `getUserByUserId(userId)` - Finds by userId (unique constraint lookup)
+- ✅ `updateUser(id, data)` - Partial updates with proper defaults for unchanged fields
+- ✅ `deleteUser(id)` - Returns boolean based on rowCount
+
+**Test coverage**:
+- testScripts/test-user.ts ✅ (11 tests covering all operations)
+
+**DTO Update**:
+- `src/dtos/user.dto.ts` - `mapToUserDTO` updated to support both Drizzle camelCase and raw MySQL snake_case via fallback (`givenName ?? dbRow.given_name`)
 
 ### 3. Course Service (100% implemented, tested)
 **File**: `src/services/course.service.ts` (274 lines)
@@ -139,7 +157,17 @@ export async function getCourseList() { ... }
 
 ---
 
-## 🔧 RECENT FIXES
+## 🔧 RECENT MIGRATIONS
+
+**User Service Migration** (2026-10-19):
+- Migrated all user service functions from MySQL/raw SQL to PostgreSQL/Drizzle
+- Updated `api-v2/src/services/user.service.ts` with 6 CRUD functions
+- Updated `api-v2/src/dtos/user.dto.ts` `mapToUserDTO` to support both Drizzle camelCase and raw snake_case
+- Created test script `api-v2/testScripts/test-user.ts` with 11 comprehensive tests
+- All tests passing ✅
+- Added to milestones: User Service and User DTOs marked complete in checkpoint.md and checklist.md
+
+**Recent Fix** from checkpoint (2026-10-13):
 
 **Commit d163846** - Fixed foreign key joins:
 ```diff
@@ -161,18 +189,20 @@ export async function getCourseList() { ... }
 | Component | Progress | Status |
 |-----------|----------|--------|
 | Database Schema | 100% | ✅ Complete |
+| User DTOs | 100% | ✅ Complete |
+| User Service | 100% | ✅ Complete |
+| User Tests | 100% | ✅ Complete |
 | Course DTOs | 100% | ✅ Complete |
 | Course Service | 100% | ✅ Complete |
 | Course Tests | 100% | ✅ Complete |
 | Course Routes | 20% | ⚠️ Partial |
 | Course Controller | 14% | ⚠️ Partial |
-| User Service | 0% | 🔴 Not started |
 | User Controller | 0% | 🔴 Not started |
 | User Routes | 0% | 🔴 Not started |
 | Auth Service | 0% | 🔴 Not started |
 | Auth Controller | 0% | 🔴 Not started |
 | Auth Routes | 0% | 🔴 Not started |
-| Overall API | ~65% | 🟧 In progress |
+| Overall API | ~70% | 🟧 In progress |
 
 ---
 
@@ -280,7 +310,12 @@ Migrating from → api-v2 (exists)
 
 **Immediate next actions (in order)**:
 
-1. **Complete Course Module routing** (~5 min):
+1. **Complete User Module routing & controllers** (~20 min):
+   - Create `api-v2/src/routes/user.routes.ts` with CRUD routes
+   - Create `api-v2/src/controller/user.controller.ts` mirroring Express controller
+   - Register routes in `api-v2/src/index.ts`
+
+2. **Complete Course Module routing** (~5 min):
    ```typescript
    // Edit src/routes/course.routes.ts
    app.post("/courses/fetch", CourseController.fetchCourses);
@@ -290,7 +325,7 @@ Migrating from → api-v2 (exists)
    app.get("/courses/list", CourseController.getCourseList);
    ```
 
-2. **Complete Course Module controllers** (~15 min):
+3. **Complete Course Module controllers** (~15 min):
    ```typescript
    // Edit src/controller/course.controller.ts
    export async function fetchCourses(...) // Move from service
@@ -300,13 +335,13 @@ Migrating from → api-v2 (exists)
    export async function getCourseList()
    ```
 
-3. **Verify API is ready to start**:
+4. **Verify API is ready to start**:
    ```bash
    npm run dev
    # Test endpoints with Postman/Thunder Client
    ```
 
-4. **Run full test suite**:
+5. **Run full test suite**:
    ```bash
    node testScripts/test-create-course.ts && \
    node testScripts/test-update-course-list.ts && \
@@ -314,7 +349,8 @@ Migrating from → api-v2 (exists)
    node testScripts/test-getUniqueterm.ts && \
    node testScripts/test-course-list.ts && \
    node testScripts/test-get-course.ts && \
-   node testScripts/test-findByname.ts
+   node testScripts/test-findByname.ts && \
+   node testScripts/test-user.ts
    ```
 
 ---

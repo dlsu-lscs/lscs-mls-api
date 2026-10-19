@@ -78,16 +78,17 @@
 
 ## 3️⃣ SERVICES TO MIGRATE
 
-### User Service (`api-v2/src/service/user.service.ts`)
-- [ ] Migrate functions from `services/user.service.ts`
-  - [ ] `getUserByUserId` (helper)
-  - [ ] `createUser`
-  - [ ] `getAllUsers`
-  - [ ] `getUserById`
-  - [ ] `updateUser`
-  - [ ] `deleteUser`
-- [ ] Update database connectivity from MySQL to PostgreSQL/Drizzle
-- [ ] Fix DTO mapping (uid → uid, use Drizzle ORM)
+### User Service (`api-v2/src/services/user.service.ts`) ✅ MIGRATED & TESTED
+- [x] Migrate functions from `services/user.service.ts`
+  - [x] `getUserByUserId` (helper)
+  - [x] `createUser`
+  - [x] `getAllUsers`
+  - [x] `getUserById`
+  - [x] `updateUser`
+  - [x] `deleteUser`
+- [x] Update database connectivity from MySQL to PostgreSQL/Drizzle
+- [x] Fix DTO mapping (uid → uid, support both camelCase/snake_case)
+- Test script: `testScripts/test-user.ts` ✅
 
 ### Selected Course Service (`api-v2/src/service/selected-course.service.ts`)
 - [ ] Migrate functions from `services/selected-course.service.ts`
@@ -122,12 +123,12 @@
 
 ## 4️⃣ DTOs TO MIGRATE
 
-### User DTO (`api-v2/src/dto/user.dto.ts`)
-- [ ] Migrate from `dtos/user.dto.ts`
+### User DTO (`api-v2/src/dtos/user.dto.ts`) ✅ MIGRATED
+- [x] Migrate from `dtos/user.dto.ts`
   - `User` interface
   - `CreateUser` interface
   - `UpdateUser` interface
-  - `mapToUserDTO` function
+  - `mapToUserDTO` function ✅ updated to support both Drizzle camelCase and raw snake_case
 
 ### Course DTO (`api-v2/src/dto/course.dto.ts`)
 - [ ] Migrate from `dtos/course.dto.ts`
