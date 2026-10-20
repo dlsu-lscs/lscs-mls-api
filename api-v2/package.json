@@ -5,9 +5,12 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "tsx testScripts/run-user-tests.ts && tsx testScripts/run-course-tests.ts",
+    "test": "tsx testScripts/run-user-tests.ts && tsx testScripts/run-course-tests.ts && tsx testScripts/run-auth-tests.ts && tsx testScripts/run-selected-courses-tests.ts && tsx testScripts/archershub.controller.test.ts",
     "test:user": "tsx testScripts/run-user-tests.ts",
     "test:course": "tsx testScripts/run-course-tests.ts",
+    "test:auth": "tsx testScripts/run-auth-tests.ts",
+    "test:selected-courses": "tsx testScripts/run-selected-courses-tests.ts",
+    "test:archershub": "tsx testScripts/archershub.controller.test.ts",
     "test:user:service": "tsx testScripts/user.service.test.ts",
     "test:user:controller": "tsx testScripts/user.controller.test.ts",
     "dev": "tsx watch src/index.ts",
