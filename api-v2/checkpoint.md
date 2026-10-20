@@ -1,399 +1,121 @@
 # Tech Migration Checkpoint - api-v2
-**Generated**: 2026-10-15
-**Branch**: `feature/42-tech-migration`
-**Status**: ACTIVE - Periodic checkpoint
+**Updated**: 2026-10-19  
+**Branch**: `feature/42-tech-migration`  
+**Status**: ACTIVE — Auth, User & Course Modules Fully Migrated (~85% Complete)
 
 ---
 
-## 📋 SUMMARY
+## 📋 Executive Summary
 
-This checkpoint documents the current state of the api-v2 migration from Express/MySQL to Fastify/PostgreSQL (Drizzle ORM).
-
-**Current Progress**: ~70% complete
-- ✅ Database schema defined and working
-- ✅ Course services fully implemented and tested
-- ✅ User service fully implemented and tested ✅ NEW
-- ✅ DTOs created and verified
-- ⏳ Routes and controllers need expansion
-- ⏳ Auth services still pending
+The migration from Express/MySQL (v1, `src/`) to Fastify/PostgreSQL with Drizzle ORM (v2, `api-v2/`) has successfully cleared its three largest and most complex domains: **Auth**, **Users**, and **Courses**. All three have their full vertical stack (schema, DTOs, services, controllers, and routes) implemented, integrated into `index.ts`, and the User/Course modules are backed by comprehensive automated test suites.
 
 ---
 
-## 🎯 CURRENT FOCUS
-
-**Last 5 commits show focused work on:**
-1. `d163846` - fix(services): mistake in calling courseId's in query + test file
-2. `b560e50` - feat(service): untested! updateCourses (with recent test added)
-3. `acb8324` - feat(service): getInstructorsByCourseName + test files [tested & working]
-4. `6a29423` - feat(service): getCourseList + testfile + working
-5. `4704420` - feat(service): getCourseById() tested and working (with DTO refactor)
-
-**Immediate context**: Just fixed a bug where `courseTimeslots.tid` and `courseEnrollments.eid` were incorrectly referenced as foreign keys. All JOINs now correctly use `courseId`.
-
----
-
-## ✅ COMPLETED MODULES
+## ✅ Completed Modules
 
 ### 1. Database Layer (100%)
-```
-src/db/schema/
-  ├── courses.ts              # ✓ Verified
-  ├── course_enrollments.ts   # ✓ Verified
-  ├── course_timeslots.ts     # ✓ Verified
-  ├── users.ts                # ✓ Verified
-  └── selected-courses.ts     # Exists
-```
-**Status**: All schemas defined with Drizzle ORM, foreign key relationships verified.
+*   **Engine**: PostgreSQL via `pg.Pool` + Drizzle ORM
+*   **Schemas** (`src/db/schema/`):
+    *   `users.ts` — User identity, unique constraints, identity column primary keys
+    *   `courses.ts` — Course metadata (name, section, term, campus, modality)
+    *   `course_enrollments.ts` — Capacity and enrolled counts, cascading foreign keys to `courses.cid`
+    *   `course_timeslots.ts` — Room, day, time, instructor schedules linked to `courses.cid`
+    *   `selected-courses.ts` — Pivot table tracking user saved courses with cascade deletes
 
-### 2. User Service (100% implemented, tested) ✅ NEW
-**File**: `src/services/user.service.ts` (84 lines)
+### 2. User Module (100%)
+*   **Service** (`src/services/user.service.ts`):
+    *   `createUser` (with unique `userId` conflict check)
+    *   `getAllUsers`
+    *   `getUserById`
+    *   `getUserByUserId`
+    *   `updateUser` (partial updates preserving untouched fields)
+    *   `deleteUser` (returning deletion boolean based on `rowCount`)
+*   **Controller** (`src/controller/user.controller.ts`): Fastify async reply handlers with defensive validation (invalid IDs, empty payloads, duplicate handling).
+*   **Routes** (`src/routes/user.routes.ts`): Registered under `/users` in `index.ts`.
+*   **DTOs** (`src/dtos/user.dto.ts`): `mapToUserDTO` handles both Drizzle camelCase properties and legacy raw SQL snake_case fallbacks.
+*   **Testing**: Automated suite in `testScripts/run-user-tests.ts` validating service logic and controller HTTP injection.
 
-**Fully implemented functions** (all tested):
-- ✅ `createUser(userId)` - Checks uniqueness by userId, inserts, returns User
-- ✅ `getAllUsers()` - Returns all users
-- ✅ `getUserById(id)` - Finds by uid (Drizzle IDs auto-map to `uid`)
-- ✅ `getUserByUserId(userId)` - Finds by userId (unique constraint lookup)
-- ✅ `updateUser(id, data)` - Partial updates with proper defaults for unchanged fields
-- ✅ `deleteUser(id)` - Returns boolean based on rowCount
+### 3. Auth Module (100%)
+*   **Service** (`src/services/auth.service.ts`): `googleAuth2` — Google userinfo exchange via native `fetch` (replacing `axios`), user upsert through `user.service.ts`, and JWT signing (`14d` expiry) matching v1 payload.
+*   **Controller** (`src/controller/auth.controller.ts`): Fastify handlers for `POST /auth/google` and `GET /auth/google/callback`, with the OAuth code→token exchange also migrated to native `fetch`.
+*   **Routes** (`src/routes/auth.routes.ts`): Registered under `/auth` in `index.ts`.
+*   **Middleware** (`src/middlewares/auth.middleware.ts`): Fastify pre-handler that inspects `Authorization: Bearer <jwt>`, verifies against `JWT_SECRET`, and attaches decoded claims to `request.user` (declared via Fastify module augmentation). Returns 401 on missing/invalid token.
 
-**Test coverage**:
-- testScripts/test-user.ts ✅ (11 tests covering all operations)
+### 4. Course Module (100%)
+*   **Service** (`src/services/course.service.ts`):
+    *   `createCourse` — Transactional insert across courses, enrollments, and timeslots
+    *   `updateCourse` — Full reconciliation diffing existing vs incoming timeslots (insert/update/delete)
+    *   `getCourseById` — Relational joins returning nested `CourseInformation`
+    *   `getAllCoursesByCourseName` — Pattern matching via Drizzle `like()`
+    *   `getInstructorsByCourseName` — Distinct instructor lookups
+    *   `getUniqueTerms` & `getUniqueCampuses` — Distinct non-empty filtering
+    *   `getCourseList` — Alphabetically sorted distinct course titles
+    *   `deleteCourse` & `deleteCourseByCourseName` — Cascading deletes
+    *   `fetchCourses` — Integration with scraper utilities using dynamic imports
+*   **Controller** (`src/controller/course.controller.ts`): Fastify endpoints with error mapping for scraper exceptions (`Parsing error`, `Login`, etc.).
+*   **Routes** (`src/routes/course.routes.ts`): Registered under `/courses` in `index.ts`:
+    *   `POST /courses/fetch`
+    *   `GET /courses/search/:courseName`
+    *   `GET /courses/id/:id`
+    *   `GET /courses/terms`
+    *   `GET /courses/list`
+    *   `GET /courses/campuses`
+*   **Testing**: Full database lifecycle test in `testScripts/run-course-tests.ts`.
 
-**DTO Update**:
-- `src/dtos/user.dto.ts` - `mapToUserDTO` updated to support both Drizzle camelCase and raw MySQL snake_case via fallback (`givenName ?? dbRow.given_name`)
-
-### 3. Course Service (100% implemented, tested)
-**File**: `src/services/course.service.ts` (274 lines)
-
-**Fully implemented functions** (all tested):
-- ✅ `createCourse()` - Transactional course creation with enrollments & timeslots
-- ✅ `updateCourse()` - Complex update with enrollment & timeslot diffs (recently fixed)
-- ✅ `getCourseById()` - Returns complete course info with DTO mapping
-- ✅ `getAllCoursesByCourseName()` - Filters courses by name pattern
-- ✅ `getCourseList()` - Distinct alphabetically sorted courses
-- ✅ `getUniqueTerms()` - Distinct terms (non-empty)
-- ✅ `getUniqueCampuses()` - Distinct campuses (non-empty)
-- ✅ `getInstructorsByCourseName()` - DISTINCT instructors for a course name (recently added)
-
-**Test coverage**:
-- test-create-course.ts ✓
-- test-update-course-list.ts ✓ (newly added)
-- test-get-course-instructor.ts ✓
-- test-getUniqueterm.ts ✓
-- test-course-list.ts ✓
-- test-get-course.ts ✓
-- test-findByname.ts ✓
-
-### 4. Course DTOs (100%)
-```
-src/dtos/
-  ├── course.dto.ts                       # ✓ Verified
-  ├── course-enrollment.dto.ts            # ✓ Verified
-  ├── course-timeslot.dto.ts              # ✓ Verified
-  ├── course-information.dto.ts           # ✓ Verified
-  ├── selected-course.dto.ts              # ✓ Verified
-  └── user.dto.ts                         # Exists
-```
-
-### 5. Routes & Controllers (Completed)
-**User Module**:
-- ✅ `src/controller/user.controller.ts` - All CRUD functions migrated and working
-- ✅ `src/routes/user.routes.ts` - All CRUD routes registered at `/users`
-- ✅ Routes registered in `src/index.ts`
-
-**Course Module**:
-- ✅ `src/controller/course.controller.ts` - All functions migrated and working
-- ✅ `src/routes/course.routes.ts` - All routes registered at `/courses`
-- ✅ Routes registered in `src/index.ts`
-
-**All routes and controllers for User and Course modules are now fully migrated.**
+### 5. Test Infrastructure
+*   Consolidated test runner configured in `package.json` (`npm test`) executing:
+    *   `testScripts/run-user-tests.ts`
+    *   `testScripts/run-course-tests.ts`
+*   Guaranteed automated table teardown and setup before and after execution to prevent dirty test data.
 
 ---
 
-## ⏳ PENDING WORK
+## ❌ Remaining Work (Priority Order)
 
-### Priority 1 - Finish Course Module
-```typescript
-// In src/routes/course.routes.ts - Add routes:
-app.get("/courses/search/:courseName", CourseController.getAllCoursesByCourseName);
-app.get("/courses/id/:id", CourseController.getCourseById);
-app.get("/courses/terms", CourseController.getUniqueTerms);
-app.get("/courses/list", CourseController.getCourseList);
+### 1. Selected Courses Module
+*   **Files to Create**:
+    *   `api-v2/src/services/selected-course.service.ts`
+    *   `api-v2/src/controller/selected-courses.controller.ts`
+    *   `api-v2/src/routes/selected-courses.routes.ts`
+*   **Scope**:
+    *   `POST /users/courses` — Complex scheduling conflict detection across day and time overlaps
+    *   `GET /users/:id/courses` — Retrieve joined course, timeslot, and enrollment details
+    *   `DELETE /users/:userId/courses/:courseId` — Remove saved course relations
+    *   Register under `/users` prefix or separate `/selected-courses` route
 
-// In src/controller/course.controller.ts - Add controllers:
-export async function fetchCourses(...) { ... }  // Complex scraper
-export async function getAllCoursesByCourseName(...) { ... }
-export async function getCourseById(...) { ... }
-export async function getUniqueTerms() { ... }
-export async function getCourseList() { ... }
-```
+### 2. ArchersHub Module
+*   **Files to Create**:
+    *   `api-v2/src/services/archershub.service.ts`
+    *   `api-v2/src/controller/archershub.controller.ts`
+    *   `api-v2/src/routes/archershub.routes.ts`
+*   **Scope**:
+    *   Expose root-level quick access routes: `GET /campuses`, `GET /terms`, `GET /courses/list`
+    *   Reuse or bridge existing course service operations
 
-### Priority 2 - User Module (Checklist items)
-**Services** (`src/services/`):
-- ❌ user.service.ts - Functions: `getUserByUserId`, `createUser`, `getAllUsers`, `getUserById`, `updateUser`, `deleteUser`
-- ❌ auth.service.ts - `googleAuth2`, JWT handling, axios → fetch
-- ❌ selected-course.service.ts - `getAllUserSelectedCourse`, `deleteSelectedCourse`, `createSelectedCourse` (keep conflict detection)
-
-**Controllers** (`src/controller/`):
-- ❌ user.controller.ts
-- ❌ auth.controller.ts
-- ❌ selected-courses.controller.ts
-
-**Routes** (`src/routes/`):
-- ❌ user.routes.ts
-- ❌ auth.routes.ts
-- ❌ selected-courses.routes.ts
-
-**DTOs** (`src/dtos/`):
-- ❌ user.dto.ts (User, CreateUser, UpdateUser interfaces, mapping functions)
-- ❌ selected-course.dto.ts (SelectedCourse, CreateSelectedCourse, mapping)
-
-### Priority 3 - Additional Infrastructure
-- ❌ Add error middleware (global error handling)
-- ❌ Add auth middleware (JWT verification)
-- ❌ Register all services in index.ts
-- ❌ Add API routes registration in main.ts/index.ts
+### 3. Middleware & Infrastructure
+*   **Error Middleware** (`src/middlewares/error.middleware.ts`): Centralized Fastify error handler for consistent status codes and payload envelopes.
+*   **DTO Audit**: Update remaining DTO files (`course.dto.ts`, `course-enrollment.dto.ts`, `course-timeslot.dto.ts`) in `api-v2/src/dtos/` to explicitly type infer from Drizzle schemas where beneficial.
 
 ---
 
-## 🔧 RECENT MIGRATIONS
+## 📊 Detailed Progress Matrix
 
-**User Controller & Routes Migration** (2026-10-19):
-- Migrated `api-v2/src/controller/user.controller.ts` from Express to Fastify (`FastifyReply`, `FastifyRequest`)
-- Created `api-v2/src/routes/user.routes.ts` with Fastify plugin pattern
-- Registered `userRoutes` with prefix `/users` in `api-v2/src/index.ts`
-- Live-tested all 6 endpoints via curl against running dev server ✅
-
-**User Service Migration** (2026-10-19):
-- Migrated all user service functions from MySQL/raw SQL to PostgreSQL/Drizzle
-- Updated `api-v2/src/services/user.service.ts` with 6 CRUD functions
-- Updated `api-v2/src/dtos/user.dto.ts` `mapToUserDTO` to support both Drizzle camelCase and raw snake_case
-- Created test script `api-v2/testScripts/test-user.ts` with 11 comprehensive tests
-- All tests passing ✅
-- Added to milestones: User Service and User DTOs marked complete in checkpoint.md and checklist.md
-
-**Recent Fix** from checkpoint (2026-10-13):
-
-**Commit d163846** - Fixed foreign key joins:
-```diff
-- .innerJoin(courses, eq(courses.cid, courseTimeslots.tid))
-+ .innerJoin(courses, eq(courses.cid, courseTimeslots.courseId))
-
-- .leftJoin(courseEnrollments, eq(courses.cid, courseEnrollments.eid))
-+ .leftJoin(courseEnrollments, eq(courses.cid, courseEnrollments.courseId))
-
-- .leftJoin(courseTimeslots, eq(courses.cid, courseTimeslots.tid))
-+ .leftJoin(courseTimeslots, eq(courses.cid, courseTimeslots.courseId))
-```
-**Impact**: All `getCourseById`, `getInstructorsByCourseName`, `getAllCoursesByCourseName` now correctly join tables.
+| Module / Component | Service | Controller | Routes | Tests | Overall Status |
+|--------------------|:-------:|:----------:|:------:|:-----:|:--------------:|
+| **Database Schemas** | — | — | — | ✅ | 100% |
+| **User Module** | ✅ | ✅ | ✅ | ✅ | 100% |
+| **Course Module** | ✅ | ✅ | ✅ | ✅ | 100% |
+| **Auth Module** | ✅ | ✅ | ✅ | ❌ | 100% |
+| **Selected Courses** | ❌ | ❌ | ❌ | ❌ | 0% |
+| **ArchersHub** | ❌ | ❌ | ❌ | ❌ | 0% |
+| **Middleware** | — | — | ✅ | ❌ | ~50% |
+| **TOTAL COMPLETION** | | | | | **~85%** |
 
 ---
 
-## 📊 METRICS
+## 🚀 Recommended Immediate Next Step
 
-| Component | Progress | Status |
-|-----------|----------|--------|
-| Database Schema | 100% | ✅ Complete |
-| User DTOs | 100% | ✅ Complete |
-| User Service | 100% | ✅ Complete |
-| User Tests | 100% | ✅ Complete |
-| User Controller | 100% | ✅ Complete |
-| User Routes | 100% | ✅ Complete |
-| Course DTOs | 100% | ✅ Complete |
-| Course Service | 100% | ✅ Complete |
-| Course Tests | 100% | ✅ Complete |
-| Course Routes | 100% | ✅ Complete |
-| Course Controller | 100% | ✅ Complete |
-| Auth Service | 0% | 🔴 Not started |
-| Auth Controller | 0% | 🔴 Not started |
-| Auth Routes | 0% | 🔴 Not started |
-| Overall API | ~80% | 🟧 In progress |
-
----
-
-## 🗺️ ROUTING STRATEGY
-
-**Current routing** (`src/index.ts` not read yet, but inferred):
-```typescript
-app.get("/campuses", CourseController.getCampuses);
-```
-
-**Recommended paths**:
-```typescript
-// Collected in checklist.md
-app.register(userRoutes, { prefix: "/users" });
-app.register(courseRoutes, { prefix: "/courses" });
-app.register(authRoutes, { prefix: "/auth" });
-app.register(archershubRoutes, { prefix: "/" });  // Root
-app.register(selectedCoursesRoutes, { prefix: "/users" });
-```
-
-**Endpoints to register**:
-- `/users` - All user operations
-- `/courses` - Course operations
-- `/auth` - Google OAuth + JWT
-- `/users/courses` - Selected courses
-- `/campuses`, `/terms`, `/courses/list` (archershub-style root paths)
-
----
-
-## 🧪 TESTING STATUS
-
-**Test scripts in `testScripts/` directory**:
-```
-✅ test-create-course.ts          - Create course + enrollments + timeslots
-✅ test-update-course-list.ts     - Update course + diffs (ENROLMENT/TIMESLOT)
-✅ test-get-course-instructor.ts  - getInstructorsByCourseName
-✅ test-getUniqueterm.ts          - getUniqueTerms
-✅ test-course-list.ts            - getCourseList validation
-✅ test-get-course.ts             - getCourseById + DTO mapping
-✅ test-findByname.ts             - getAllCoursesByCourseName
-```
-
-**Manual testing recommended**:
-- POST `/courses` - Create new course with enrollment limits and timeslots
-- GET `/campuses` - Verify campus list
-- GET `/courses/list` - Verify alphabetical course list
-- GET `/courses/terms` - Verify distinct terms
-- GET `/courses/id/:id` - Verify complete course info
-- GET `/courses/search/:name` - Verify pattern matching
-
----
-
-## 📁 FILE ALIGNMENT
-
-**Current api-v2 file structure vs migration checklist**:
-
-Migrating from → api-v2 (exists)
-- `src/routes/user.routes.ts` → `api-v2/src/routes/` ❌ Not created
-- `src/routes/auth.routes.ts` → `api-v2/src/routes/` ❌ Not created
-- `src/routes/selected-courses.routes.ts` → `api-v2/src/routes/` ❌ Not created
-- `src/routes/course.routes.ts` → `api-v2/src/routes/` ⚠️ Partial (`getCampuses` only)
-- `src/controllers/user.controller.ts` → `api-v2/src/controller/` ❌ Not created
-- `src/controllers/auth.controller.ts` → `api-v2/src/controller/` ❌ Not created
-- `src/controllers/selected-courses.controller.ts` → `api-v2/src/controller/` ❌ Not created
-- `src/controllers/course.controller.ts` → `api-v2/src/controller/` ⚠️ Partial (`getCampuses` only)
-- `src/services/user.service.ts` → `api-v2/src/services/` ❌ Not created
-- `src/services/auth.service.ts` → `api-v2/src/services/` ❌ Not created
-- `src/services/selected-course.service.ts` → `api-v2/src/services/` ❌ Not created
-- `src/services/course.service.ts` → `api-v2/src/services/` ✅ Complete
-- `src/dtos/user.dto.ts` → `api-v2/src/dtos/` ✅ Exists
-- `src/dtos/course.dto.ts` → `api-v2/src/dtos/` ✅ Verfied
-- `src/dtos/course-enrollment.dto.ts` → `api-v2/src/dtos/` ✅ Verified
-- `src/dtos/course-timeslot.dto.ts` → `api-v2/src/dtos/` ✅ Verified
-- `src/dtos/course-information.dto.ts` → `api-v2/src/dtos/` ✅ Verified
-- `src/dtos/selected-course.dto.ts` → `api-v2/src/dtos/` ✅ Exists
-- `src/scripts/*` → Used by api-v2 (external) ✅ Already imported
-
----
-
-## 🐛 KNOWN ISSUES
-
-1. **Foreign Key Correction** (FIXED):
-   - Bug: Used `tid` / `eid` as references in JOINs
-   - Fixed: Now correctly use `courseId` everywhere
-   - Impact: All course-related queries now functional
-
-2. **Service NOT tested**:
-   - File: `src/services/course.service.ts`
-   - Function: `updateCourse`
-   - Note: Listed as "untested" in commit b560e50, but new test file added d163846
-   - Status: Now has test coverage
-
-3. **Missing Route Controllers**:
-   - `fetchCourses` - Complex scraper orchestration not yet moved to controller
-   - `getUniqueTerms` → `/courses/terms` endpoint not registered
-   - `getCourseList` → `/courses/list` endpoint not registered
-
-4. **Legacy code artifacts**:
-   - Line 218-219: Empty lines left in service file (code style)
-   - Log entries in some functions may need cleanup
-
----
-
-## 🔄 NEXT SUCCESSFUL STEP
-
-**Immediate next actions (in order)**:
-
-1. **Complete User Module routing & controllers** (~20 min):
-   - Create `api-v2/src/routes/user.routes.ts` with CRUD routes
-   - Create `api-v2/src/controller/user.controller.ts` mirroring Express controller
-   - Register routes in `api-v2/src/index.ts`
-
-2. **Complete Course Module routing** (~5 min):
-   ```typescript
-   // Edit src/routes/course.routes.ts
-   app.post("/courses/fetch", CourseController.fetchCourses);
-   app.get("/courses/search/:courseName", CourseController.getAllCoursesByCourseName);
-   app.get("/courses/id/:id", CourseController.getCourseById);
-   app.get("/courses/terms", CourseController.getUniqueTerms);
-   app.get("/courses/list", CourseController.getCourseList);
-   ```
-
-3. **Complete Course Module controllers** (~15 min):
-   ```typescript
-   // Edit src/controller/course.controller.ts
-   export async function fetchCourses(...) // Move from service
-   export async function getAllCoursesByCourseName(...)
-   export async function getCourseById(...)
-   export async function getUniqueTerms()
-   export async function getCourseList()
-   ```
-
-4. **Verify API is ready to start**:
-   ```bash
-   npm run dev
-   # Test endpoints with Postman/Thunder Client
-   ```
-
-5. **Run full test suite**:
-   ```bash
-   node testScripts/test-create-course.ts && \
-   node testScripts/test-update-course-list.ts && \
-   node testScripts/test-get-course-instructor.ts && \
-   node testScripts/test-getUniqueterm.ts && \
-   node testScripts/test-course-list.ts && \
-   node testScripts/test-get-course.ts && \
-   node testScripts/test-findByname.ts && \
-   node testScripts/test-user.ts
-   ```
-
----
-
-## 📝 COMMIT REFERENCE
-
-**Current HEAD**: `d163846` - "fix(services): mistake in calling courseId's in query + test file"
-
-**Commit counts for completed work**:
-- `55a33ce7` - createCourse (tested & working)
-- `cc4301bf` - getCourseById (with DTO refactor)
-- `25fc523e` - getAllCoursesByCourseName
-- `6a29423f` - getCourseList (testfile + working)
-- `730e6666` - getUniqueTerms (test + working)
-- `acb8324` - getInstructorsByCourseName (test files [tested & working])
-- `b560e50` - updateCourses (untested!)
-- `d163846` - fix courseId joins + test file
-
-**To resume from here**, focus on completing the remaining 5 course endpoints (routes + controllers), then move to User/Auth modules.
-
----
-
-## 📖 REFERENCES
-
-- **Migration Checklist**: `devLogs/checklist.md` (updated 2026-10-13)
-- **Base Repository**: `src/` (Express/MySQL v1)
-- **Environment**: `.env` (configured with DB_URL, GOOGLE_CLIENT_ID, etc.)
-- **Schema Blueprint**: `src/db/PostgreSQL-Translated.sql`
-
----
-
-## ⏰ RESUME INFO
-
-**Branch**: `feature/42-tech-migration`
-**Checkout command**: `git checkout feature/42-tech-migration`
-**Current commit**: d163846 (clean working tree)
-**Working directory**: `/Users/martinantolihao/dev/lscs-mls-api/api-v2`
-
-**Recommended starting point after this checkpoint: 2. Complete Course Module routing section**
-
----
+Begin **Selected Courses Module Migration**:
+1. Port `src/services/selected-course.service.ts` to `api-v2/src/services/selected-course.service.ts`, including the scheduling conflict detection across day/time overlaps.
+2. Port `src/controllers/selected-courses.controller.ts` to Fastify conventions.
+3. Expose routes in `api-v2/src/routes/selected-courses.routes.ts` and register in `index.ts`.

@@ -4,6 +4,7 @@ import cors from '@fastify/cors';
 import { pool } from './db/index.js';
 import courseRoutes from "./routes/course.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import authRoutes from "./routes/auth.routes.js";
 
 dotenv.config();
 const port = Number(process.env.PORT) || 3000;
@@ -50,6 +51,7 @@ app.get("/health", async (_request, reply) => {
 
 app.register(courseRoutes, { prefix: "/courses" });
 app.register(userRoutes, { prefix: "/users" });
+app.register(authRoutes, { prefix: "/auth" });
 
 
 const start = async () => {
