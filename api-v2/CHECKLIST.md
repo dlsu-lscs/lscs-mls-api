@@ -53,7 +53,9 @@
 - [x] `run-course-tests.ts`
 - [x] `run-auth-tests.ts`
 - [x] `run-selected-courses-tests.ts`
+- [x] `archershub.controller.test.ts`
 - [x] Documentation: `testScripts/docu/*.md`
+- [x] `npm test` runs all suites
 
 ---
 
@@ -74,10 +76,6 @@
 ### Priority 3: Route Protection (Optional)
 - [ ] Apply `authMiddleware` to Course routes where appropriate
 - [ ] Apply `authMiddleware` to User routes where appropriate
-
-### Priority 4: Package.json Test Script
-- [ ] Add `run-selected-courses-tests.ts` to `npm test` script
-- [ ] Add `archershub.controller.test.ts` to `npm test` script
 
 ---
 
@@ -103,5 +101,4 @@
 
 1. **Create `error.middleware.ts`** — Highest impact for production readiness
 2. **Refine DTOs** — Type safety improvement
-3. **Update `npm test`** — Include all test suites
-4. **Optional: Protect Course/User routes** — Security hardening
+3. **Optional: Protect Course/User routes** — Security hardening
