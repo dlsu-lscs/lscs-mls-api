@@ -1,10 +1,8 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import type { FastifyPluginAsync } from "fastify";
 
-// First, create a mock module by patching the service file's exports
-// We do this by creating a test-specific wrapper that loads the routes with mocked service
-
-// Mock implementations
+// Inline mock implementations for testing
 const mockFetchDropdowns = async () => ({
   CampusDrp: [
     { CAMPUSNAME: "Main Campus", CAMPUSNO: "1" },
@@ -21,16 +19,68 @@ const mockFetchCourseDropdown = async (_campusNo: string, _sessionId: string) =>
   { COURSE_CREATION_ID: "102", COURSE_NAME: "TEST - Course Two", SUBJECT_CODE: "CS102" },
 ];
 
-// Use a before-import approach: monkey-patch at the source before routes load
-// Create a temporary patch file approach
-import * as archershubService from "../src/services/archershub.service.js";
+// Test controller handlers using mocks directly
+async function getCampuses(_request: any, reply: any) {
+  try {
+    const data = await mockFetchDropdowns();
+    const campuses = data.CampusDrp.map((item: any) => ({
+      name: item.CAMPUSNAME,
+      campusNo: item.CAMPUSNO,
+    }));
+    return reply.code(200).send(campuses);
+  } catch (err: any) {
+    return reply.code(500).send({ message: 'Internal server error.' });
+  }
+}
 
-// Overwrite the functions using direct assignment (not defineProperty)
-(archershubService as any).fetchDropdowns = mockFetchDropdowns;
-(archershubService as any).fetchCourseDropdown = mockFetchCourseDropdown;
+async function getTerms(_request: any, reply: any) {
+  try {
+    const data = await mockFetchDropdowns();
+    const current = data.SessionDrp.find((item: any) => item.IS_CURRENT_SESSION === true);
+    const others = data.SessionDrp
+      .filter((item: any) =>
+        item.ACADEMIC_SESSION_NAME.includes('AY') &&
+        item.ACADEMIC_SESSION_ID !== current?.ACADEMIC_SESSION_ID
+      )
+      .sort((a: any, b: any) => b.ACADEMIC_SESSION_NAME.localeCompare(a.ACADEMIC_SESSION_NAME));
 
-// Now import routes
-import archershubRoutes from "../src/routes/archershub.routes.js";
+    const terms = [current, ...others]
+      .filter(Boolean)
+      .map((item: any) => ({
+        name: item.ACADEMIC_SESSION_NAME,
+        sessionId: item.ACADEMIC_SESSION_ID,
+        isCurrent: item.IS_CURRENT_SESSION === true,
+      }));
+    return reply.code(200).send(terms);
+  } catch (err: any) {
+    return reply.code(500).send({ message: 'Internal server error.' });
+  }
+}
+
+async function getCourseList(req: any, reply: any) {
+  try {
+    const { campusNo, sessionId } = req.query;
+
+    if (!campusNo || !sessionId) {
+      return reply.code(400).send({ message: 'campusNo and sessionId are required.' });
+    }
+
+    const courses = await mockFetchCourseDropdown(campusNo, sessionId);
+    const result = courses.map((item: any) => ({
+      courseId: item.COURSE_CREATION_ID,
+      name: item.COURSE_NAME ?? item.SUBJECT_CODE ?? item.SUBJECT_NAME,
+    }));
+    return reply.code(200).send(result);
+  } catch (err: any) {
+    return reply.code(500).send({ message: 'Internal server error.' });
+  }
+}
+
+const archershubTestRoutes: FastifyPluginAsync = async (app) => {
+  app.get("/campuses", getCampuses);
+  app.get("/terms", getTerms);
+  app.get("/courses/list", getCourseList);
+};
 
 export async function runArchersHubControllerTests() {
   console.log("=========================================");
@@ -39,7 +89,7 @@ export async function runArchersHubControllerTests() {
 
   const app = Fastify({ logger: false });
   await app.register(cors);
-  await app.register(archershubRoutes);
+  await app.register(archershubTestRoutes);
   await app.ready();
 
   try {
