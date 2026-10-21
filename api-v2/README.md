@@ -19,7 +19,7 @@ npm start          # Production server
 
 ## Environment Variables
 
-| Variable | Description | Example |
+| Variable | Description | Example |a
 |----------|-------------|---------|
 | `PORT` | Server port | `3000` |
 | `HOST` | Server host | `localhost` |

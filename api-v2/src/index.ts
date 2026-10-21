@@ -47,13 +47,6 @@ app.get("/health", async (_request, reply) => {
   }
 });
 
-/**TODO: Register APIv2 route plugins here 
- *
- * note to self: how fastify register syntax 
- *
- * app.register(importControllerFile, {prefix: "/route/here"});
-**/
-
 app.register(courseRoutes, { prefix: "/courses" });
 app.register(userRoutes, { prefix: "/users" });
 app.register(authRoutes, { prefix: "/auth" });
