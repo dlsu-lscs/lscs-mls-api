@@ -1,78 +1,41 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+
+// First, create a mock module by patching the service file's exports
+// We do this by creating a test-specific wrapper that loads the routes with mocked service
+
+// Mock implementations
+const mockFetchDropdowns = async () => ({
+  CampusDrp: [
+    { CAMPUSNAME: "Main Campus", CAMPUSNO: "1" },
+    { CAMPUSNAME: "Satellite Campus", CAMPUSNO: "2" },
+  ],
+  SessionDrp: [
+    { ACADEMIC_SESSION_NAME: "AY 2023-2024", ACADEMIC_SESSION_ID: "1", IS_CURRENT_SESSION: true },
+    { ACADEMIC_SESSION_NAME: "AY 2022-2023", ACADEMIC_SESSION_ID: "2", IS_CURRENT_SESSION: false },
+  ],
+});
+
+const mockFetchCourseDropdown = async (_campusNo: string, _sessionId: string) => [
+  { COURSE_CREATION_ID: "101", COURSE_NAME: "TEST - Course One", SUBJECT_CODE: "CS101" },
+  { COURSE_CREATION_ID: "102", COURSE_NAME: "TEST - Course Two", SUBJECT_CODE: "CS102" },
+];
+
+// Use a before-import approach: monkey-patch at the source before routes load
+// Create a temporary patch file approach
+import * as archershubService from "../src/services/archershub.service.js";
+
+// Overwrite the functions using direct assignment (not defineProperty)
+(archershubService as any).fetchDropdowns = mockFetchDropdowns;
+(archershubService as any).fetchCourseDropdown = mockFetchCourseDropdown;
+
+// Now import routes
 import archershubRoutes from "../src/routes/archershub.routes.js";
-import { pool } from "../src/db/index.js";
-import { createCourse } from "../src/services/course.service.js";
-import { createUser } from "../src/services/user.service.js";
-
-let TEST_COURSE_ID_1: number;
-let TEST_COURSE_ID_2: number;
-
-async function setupTestData() {
-  // Create test user (needed for course FK if any, though courses don't require user)
-  const user = await createUser({
-    email: "test.archershub@example.com",
-    givenName: "Test",
-    familyName: "ArchersHub",
-    userId: "test-archershub-user-001",
-    pictureUrl: "https://example.com/test.png",
-  });
-
-  // Create test courses with different campuses/terms
-  await createCourse(
-    {
-      courseName: "TEST - ArchersHub Course One",
-      section: "AH-101",
-      remarks: "Test course for archershub",
-      modality: "Face-to-face",
-      term: "Spring 2024",
-      campus: "Main Campus",
-    },
-    { enrollCap: 40, enrolled: 25 },
-    [
-      { day: "MON", time: "08:00-10:00", room: "LAB-1", instructor: "Instructor A" },
-    ]
-  );
-
-  await createCourse(
-    {
-      courseName: "TEST - ArchersHub Course Two",
-      section: "AH-102",
-      remarks: "Test course for archershub",
-      modality: "Online",
-      term: "Fall 2024",
-      campus: "Satellite Campus",
-    },
-    { enrollCap: 30, enrolled: 15 },
-    [
-      { day: "TUE", time: "10:00-12:00", room: "LAB-2", instructor: "Instructor B" },
-    ]
-  );
-
-  const result = await pool.query(
-    "SELECT cid FROM courses WHERE course_name LIKE 'TEST - ArchersHub Course%' ORDER BY cid"
-  );
-
-  if (result.rows.length >= 2) {
-    TEST_COURSE_ID_1 = result.rows[0].cid;
-    TEST_COURSE_ID_2 = result.rows[1].cid;
-    console.log(`Created archershub test courses: ${TEST_COURSE_ID_1}, ${TEST_COURSE_ID_2}`);
-  } else {
-    throw new Error("Failed to create test courses for archershub");
-  }
-}
-
-async function cleanupTestData() {
-  await pool.query("DELETE FROM courses WHERE cid IN ($1, $2)", [TEST_COURSE_ID_1, TEST_COURSE_ID_2]);
-  await pool.query("DELETE FROM users WHERE user_id = $1", ["test-archershub-user-001"]);
-}
 
 export async function runArchersHubControllerTests() {
   console.log("=========================================");
   console.log("  RUNNING ARCHERSHUB CONTROLLER TESTS");
   console.log("=========================================\n");
-
-  await setupTestData();
 
   const app = Fastify({ logger: false });
   await app.register(cors);
@@ -90,10 +53,11 @@ export async function runArchersHubControllerTests() {
       if (!Array.isArray(campuses)) {
         throw new Error("Expected array response");
       }
-      if (!campuses.includes("Main Campus")) {
+      const campusNames = campuses.map((c: any) => c.name);
+      if (!campusNames.includes("Main Campus")) {
         throw new Error("Expected 'Main Campus' in results");
       }
-      if (!campuses.includes("Satellite Campus")) {
+      if (!campusNames.includes("Satellite Campus")) {
         throw new Error("Expected 'Satellite Campus' in results");
       }
       console.log("✓ GET /campuses -> 200 OK with unique campuses");
@@ -109,18 +73,25 @@ export async function runArchersHubControllerTests() {
       if (!Array.isArray(terms)) {
         throw new Error("Expected array response");
       }
-      if (!terms.includes("Spring 2024")) {
-        throw new Error("Expected 'Spring 2024' in results");
+      const termNames = terms.map((t: any) => t.name);
+      if (!termNames.includes("AY 2023-2024")) {
+        throw new Error("Expected 'AY 2023-2024' in results");
       }
-      if (!terms.includes("Fall 2024")) {
-        throw new Error("Expected 'Fall 2024' in results");
+      if (!termNames.includes("AY 2022-2023")) {
+        throw new Error("Expected 'AY 2022-2023' in results");
       }
-      console.log("✓ GET /terms -> 200 OK with unique terms");
+      if (terms[0]?.isCurrent !== true) {
+        throw new Error("Expected current session first");
+      }
+      console.log("✓ GET /terms -> 200 OK with unique terms (current first)");
     }
 
-    // 3. GET /courses-list - Returns sorted course names
+    // 3. GET /courses/list - Requires query params
     {
-      const res = await app.inject({ method: "GET", url: "/courses-list" });
+      const res = await app.inject({
+        method: "GET",
+        url: "/courses/list?campusNo=1&sessionId=1"
+      });
       if (res.statusCode !== 200) {
         throw new Error(`Expected 200, got ${res.statusCode}: ${res.body}`);
       }
@@ -128,26 +99,32 @@ export async function runArchersHubControllerTests() {
       if (!Array.isArray(courses)) {
         throw new Error("Expected array response");
       }
-      if (!courses.includes("TEST - ArchersHub Course One")) {
+      const courseNames = courses.map((c: any) => c.name);
+      if (!courseNames.includes("TEST - Course One")) {
         throw new Error("Expected Course One in results");
       }
-      if (!courses.includes("TEST - ArchersHub Course Two")) {
+      if (!courseNames.includes("TEST - Course Two")) {
         throw new Error("Expected Course Two in results");
       }
-      // Check alphabetical ordering
-      const isSorted = courses.every((c, i) => i === 0 || courses[i - 1] <= c);
-      if (!isSorted) {
-        throw new Error("Courses list not sorted alphabetically");
+      console.log("✓ GET /courses/list -> 200 OK with course list");
+    }
+
+    // 4. GET /courses/list - Missing params should return 400
+    {
+      const res = await app.inject({
+        method: "GET",
+        url: "/courses/list"
+      });
+      if (res.statusCode !== 400) {
+        throw new Error(`Expected 400 for missing params, got ${res.statusCode}: ${res.body}`);
       }
-      console.log("✓ GET /courses-list -> 200 OK with sorted course names");
+      console.log("✓ GET /courses/list (missing params) -> 400 Bad Request");
     }
 
     await app.close();
-    await cleanupTestData();
     console.log("\n✅ ALL ARCHERSHUB CONTROLLER TESTS PASSED!\n");
   } catch (error) {
     await app.close();
-    await cleanupTestData();
     console.error("\n❌ ARCHERSHUB CONTROLLER TEST FAILED:", error);
     throw error;
   }

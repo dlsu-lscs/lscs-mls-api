@@ -4,7 +4,7 @@ import * as ArchersHubController from "../controller/archershub.controller.js";
 const archershubRoutes: FastifyPluginAsync = async (app) => {
   app.get("/campuses", ArchersHubController.getCampuses);
   app.get("/terms", ArchersHubController.getTerms);
-  app.get("/courses-list", ArchersHubController.getCoursesList);
+  app.get("/courses/list", ArchersHubController.getCourseList);
 };
 
 export default archershubRoutes;

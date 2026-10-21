@@ -8,9 +8,12 @@ export async function getCampuses(
   try {
     const campuses = await ArchersHubService.getCampuses();
     return reply.code(200).send(campuses);
-  } catch (error) {
-    reply.log.error(error);
-    return reply.code(500).send({ message: "Internal server error." });
+  } catch (err: any) {
+    reply.log.error(err);
+    if (['No cookie file found.', 'No cookies found.', 'Session ID not found.'].includes(err.message)) {
+      return reply.code(401).send({ message: 'No active session. Run /courses/fetch to authenticate.' });
+    }
+    return reply.code(500).send({ message: 'Internal server error.' });
   }
 }
 
@@ -21,21 +24,33 @@ export async function getTerms(
   try {
     const terms = await ArchersHubService.getTerms();
     return reply.code(200).send(terms);
-  } catch (error) {
-    reply.log.error(error);
-    return reply.code(500).send({ message: "Internal server error." });
+  } catch (err: any) {
+    reply.log.error(err);
+    if (['No cookie file found.', 'No cookies found.', 'Session ID not found.'].includes(err.message)) {
+      return reply.code(401).send({ message: 'No active session. Run /courses/fetch to authenticate.' });
+    }
+    return reply.code(500).send({ message: 'Internal server error.' });
   }
 }
 
-export async function getCoursesList(
-  _request: FastifyRequest,
+export async function getCourseList(
+  req: FastifyRequest<{ Querystring: { campusNo: string; sessionId: string } }>,
   reply: FastifyReply,
 ) {
   try {
-    const courses = await ArchersHubService.getCoursesList();
+    const { campusNo, sessionId } = req.query;
+
+    if (!campusNo || !sessionId) {
+      return reply.code(400).send({ message: 'campusNo and sessionId are required.' });
+    }
+
+    const courses = await ArchersHubService.getCourseList(campusNo, sessionId);
     return reply.code(200).send(courses);
-  } catch (error) {
-    reply.log.error(error);
-    return reply.code(500).send({ message: "Internal server error." });
+  } catch (err: any) {
+    reply.log.error(err);
+    if (['No cookie file found.', 'No cookies found.', 'Session ID not found.'].includes(err.message)) {
+      return reply.code(401).send({ message: 'No active session. Run /courses/fetch to authenticate.' });
+    }
+    return reply.code(500).send({ message: 'Internal server error.' });
   }
 }
