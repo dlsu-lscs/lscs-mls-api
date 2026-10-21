@@ -29,19 +29,19 @@ export function mapToCourseInformationDTO(
 
     if (!coursesMap.has(course.cid)) {
       coursesMap.set(course.cid, {
-        id: course.cid,
+        cid: course.cid,
         courseName: course.courseName,
         section: course.section,
-        remarks: course.remarks ?? undefined,
-        modality: course.modality ?? undefined,
-        term: course.term ?? undefined,
-        campus: course.campus ?? undefined,
+        remarks: course.remarks ?? null,
+        modality: course.modality ?? null,
+        term: course.term ?? null,
+        campus: course.campus ?? null,
 
         status: enrollment
           ? {
-            id: enrollment.eid,
-            enrollCap: enrollment.enrollCap ?? undefined,
-            enrolled: enrollment.enrolled ?? undefined,
+            eid: enrollment.eid,
+            enrollCap: enrollment.enrollCap ?? null,
+            enrolled: enrollment.enrolled ?? null,
           }
           : null,
 
@@ -54,15 +54,15 @@ export function mapToCourseInformationDTO(
     if (
       timeslot &&
       !courseInfo.timeslots.some(
-        (existing) => existing.id === timeslot.tid
+        (existing) => existing.tid === timeslot.tid
       )
     ) {
       courseInfo.timeslots.push({
-        id: timeslot.tid,
+        tid: timeslot.tid,
         day: timeslot.day,
         time: timeslot.time,
-        room: timeslot.room ?? undefined,
-        instructor: timeslot.instructor ?? undefined,
+        room: timeslot.room ?? null,
+        instructor: timeslot.instructor ?? null,
       });
     }
   }

@@ -203,7 +203,7 @@ export async function fetchCourses(
     processedClasses.add(classKey);
 
     const existingSimilarCourse = existingCourses.find((c: CourseInformation) =>
-      c['courseName'] === courseName && c['section'] === section
+      c.courseName === courseName && c.section === section
     );
 
     const currentEnrollment = enrollments.find((e: any) => e['courseId'] === curr['courseId']);
@@ -211,7 +211,7 @@ export async function fetchCourses(
 
     if (existingSimilarCourse) {
       await updateCourse(
-        existingSimilarCourse['id'],
+        existingSimilarCourse.cid,
         curr,
         currentEnrollment,
         currentTimeslots
@@ -230,12 +230,12 @@ export async function fetchCourses(
 
   await Promise.all(updatePromises);
 
-  const coursesToDelete = existingCourses.filter((c: any) =>
-    !processedClasses.has(`${c['courseName']}|${c['section']}`)
+  const coursesToDelete = existingCourses.filter((c: CourseInformation) =>
+    !processedClasses.has(`${c.courseName}|${c.section}`)
   );
 
   for (const curr of coursesToDelete) {
-    await deleteCourse(curr['id']);
+    await deleteCourse(curr.cid);
   }
 
   console.log(`Courses fetched.`);

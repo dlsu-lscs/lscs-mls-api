@@ -7,6 +7,7 @@ import userRoutes from "./routes/user.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import selectedCoursesRoutes from "./routes/selected-courses.routes.js";
 import archershubRoutes from "./routes/archershub.routes.js";
+import { errorMiddleware } from "./middlewares/error.middleware.js";
 
 dotenv.config();
 const port = Number(process.env.PORT) || 3000;
@@ -19,6 +20,8 @@ const app = Fastify({
 app.register(cors, {
   origin: 'http://localhost:3001',
 });
+
+app.setErrorHandler(errorMiddleware);
 
 
 app.get("/health", async (_request, reply) => {

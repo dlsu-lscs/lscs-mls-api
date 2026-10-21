@@ -158,8 +158,8 @@ export async function runSelectedCourseServiceTests() {
       if (courses.length === 0) {
         throw new Error("Expected at least one saved course");
       }
-      if (courses[0].id !== TEST_COURSE_ID_1) {
-        throw new Error(`Expected saved course ID ${TEST_COURSE_ID_1}, got ${courses[0].id}`);
+      if (courses[0].cid !== TEST_COURSE_ID_1) {
+        throw new Error(`Expected saved course ID ${TEST_COURSE_ID_1}, got ${courses[0].cid}`);
       }
       console.log("✓ getUserSelectedCourses -> returns saved courses");
     }
@@ -203,8 +203,8 @@ export async function runSelectedCourseServiceTests() {
       if (courses.length !== 1) {
         throw new Error(`Expected 1 course, got ${courses.length}`);
       }
-      if (courses[0].id !== TEST_COURSE_ID_2) {
-        throw new Error(`Expected Course 2 (${TEST_COURSE_ID_2}), got ${courses[0].id}`);
+      if (courses[0].cid !== TEST_COURSE_ID_2) {
+        throw new Error(`Expected Course 2 (${TEST_COURSE_ID_2}), got ${courses[0].cid}`);
       }
       console.log("✓ getUserSelectedCourses -> returns Course 2 only");
     }

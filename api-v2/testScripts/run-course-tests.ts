@@ -52,7 +52,7 @@ async function runCourseTests() {
     console.log("Testing getAllCoursesByCourseName...");
     const foundCourses = await getAllCoursesByCourseName("TEST - Introduction");
     if (foundCourses.length === 0) throw new Error("getAllCoursesByCourseName failed");
-    const testCourseId = foundCourses[0].id;
+    const testCourseId = foundCourses[0].cid;
     console.log(`✓ getAllCoursesByCourseName passed (ID: ${testCourseId})`);
 
     // 4. Test getCourseById
