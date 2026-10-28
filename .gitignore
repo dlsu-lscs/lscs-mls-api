@@ -1,6 +1,11 @@
 # Dependencies
 /node_modules
 /dist
+#Dependencies  API-v2
+/api-v2/node_modules
+/api-v2/dist
+!/api-v2/.env.example
+
 
 # Env
 .env
