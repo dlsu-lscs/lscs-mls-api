@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import * as SelectedCourseService from "../services/selected-course.service.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 
+
 export async function addSelectedCourse(
   req: FastifyRequest<{
     Params: { id: string };
@@ -20,11 +21,8 @@ export async function addSelectedCourse(
       return reply.code(400).send({ message: "Valid courseId is required." });
     }
 
-    // Verify the authenticated user matches the requested user ID
-    if (req.user && req.user.userId) {
-      // We need to map the JWT userId (Google sub) to the internal uid
-      // For now, we'll just use the param userId
-    }
+
+    //The verification needed here has become a hook found in routes and as a middleware "requierSelf.ts"
 
     const result = await SelectedCourseService.addSelectedCourse(userId, courseId);
 

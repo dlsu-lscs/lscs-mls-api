@@ -6,6 +6,18 @@ import { mapToUserDTO } from "../dtos/user.dto.js";
 
 import type { User, CreateUser, UpdateUser } from "../dtos/user.dto.js";
 
+
+export async function getUidByGoogleId(googleId: string): Promise<number | null> {
+  const [user] = await db
+    .select({ uid: users.uid })
+    .from(users)
+    .where(eq(users.userId, googleId))
+    .limit(1);
+
+  return user?.uid ?? null;
+}
+
+
 export async function createUser(data: CreateUser): Promise<User | null> {
   const { email, givenName, familyName, userId, pictureUrl } = data;
 
