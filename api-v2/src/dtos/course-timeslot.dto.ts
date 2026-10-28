@@ -1,4 +1,4 @@
-import { courseTimeslots } from "../db/schema/course_timeslots.js";
+import { courseTimeslots } from "../db/schema/course_timeslots.schema.js";
 
 export type CourseTimeslot = typeof courseTimeslots.$inferSelect;
 export type CreateCourseTimeslot = typeof courseTimeslots.$inferInsert;

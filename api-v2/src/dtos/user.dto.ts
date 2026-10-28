@@ -1,4 +1,4 @@
-import type { users } from "../db/schema/users.js";
+import type { users } from "../db/schema/users.schema.js";
 
 export type UserRow = typeof users.$inferSelect;
 

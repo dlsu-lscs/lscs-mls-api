@@ -1,6 +1,6 @@
 import { pgTable, integer } from "drizzle-orm/pg-core";
-import { courses } from "./courses.js";
-import { users } from "./users.js";
+import { courses } from "./courses.schema.js";
+import { users } from "./users.schema.js";
 
 export const selectedCourses = pgTable("selected_courses", {
   sid: integer("sid")

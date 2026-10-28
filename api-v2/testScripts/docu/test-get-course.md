@@ -45,7 +45,7 @@ If `getCourseById` returns additional nested fields (instructors, enrollments), 
 - **"Cannot read property 'id' of null"**: If `mapToCourseDTO` is missing the `if (!dbRow) return null` guard, it may throw on undefined rows.
 - **Schema undefined error**: Drizzle generics may not be inferred correctly if table columns have mixed types. Import typed rows from the schema explicitly:
   ```ts
-  import type { courses } from "./schema/courses.ts";
+  import type { courses } from "./schema/courses.schema.ts";
   const row: typeof courses.$inferSelect = await db.select().from(courses).where(eq(courses.cid, 1));
   ```
 

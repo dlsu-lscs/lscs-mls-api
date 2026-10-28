@@ -1,10 +1,10 @@
 import { db } from "../db/index.js";
 import { and, eq, inArray } from "drizzle-orm";
 
-import { selectedCourses } from "../db/schema/selected-courses.js";
-import { courses } from "../db/schema/courses.js";
-import { courseEnrollments } from "../db/schema/course_enrollments.js";
-import { courseTimeslots } from "../db/schema/course_timeslots.js";
+import { selectedCourses } from "../db/schema/selected-courses.schema.js";
+import { courses } from "../db/schema/courses.schema.js";
+import { courseEnrollments } from "../db/schema/course_enrollments.schema.js";
+import { courseTimeslots } from "../db/schema/course_timeslots.schema.js";
 
 import type { SelectedCourse, CreateSelectedCourse } from "../dtos/selected-course.dto.js";
 import type { CourseInformation } from "../dtos/course-information.dto.js";

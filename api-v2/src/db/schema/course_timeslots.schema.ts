@@ -4,7 +4,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
-import { courses } from "./courses.js";
+import { courses } from "./courses.schema.js";
 
 export const courseTimeslots = pgTable("course_timeslots", {
   tid: integer("tid")

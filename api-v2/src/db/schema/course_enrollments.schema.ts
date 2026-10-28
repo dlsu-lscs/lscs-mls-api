@@ -1,5 +1,5 @@
 import { pgTable, integer } from "drizzle-orm/pg-core";
-import { courses } from "./courses.js";
+import { courses } from "./courses.schema.js";
 
 export const courseEnrollments = pgTable("course_enrollments", {
   eid: integer("eid")

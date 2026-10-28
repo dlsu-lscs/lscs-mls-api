@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 
 import { updateCourse } from "../src/services/course.service.ts";
 import { db } from "../src/db/index.ts";
-import { courses } from "../src/db/schema/courses.ts";
+import { courses } from "../src/db/schema/courses.schema.ts";
 
 async function testUpdateCourse() {
   try {

@@ -2,9 +2,9 @@ import type { Course } from "./course.dto.js";
 import type { CourseEnrollment } from "./course-enrollment.dto.js";
 import type { CourseTimeslot } from "./course-timeslot.dto.js";
 
-import { courses } from "../db/schema/courses.js";
-import { courseEnrollments } from "../db/schema/course_enrollments.js";
-import { courseTimeslots } from "../db/schema/course_timeslots.js";
+import { courses } from "../db/schema/courses.schema.js";
+import { courseEnrollments } from "../db/schema/course_enrollments.schema.js";
+import { courseTimeslots } from "../db/schema/course_timeslots.schema.js";
 
 export interface CourseInformation extends Course {
   status: Omit<CourseEnrollment, "courseId"> | null;

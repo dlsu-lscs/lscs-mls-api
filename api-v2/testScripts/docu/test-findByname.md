@@ -64,7 +64,7 @@ results.forEach(course => {
 
 ### 2. "relation 'courses' does not exist"
 - **Cause**: Import error in `course.service.ts`. It likely imports `courses` from a local path that does not exist in the test environment.
-- **Fix**: Check `import { courses } from "../src/db/schema/courses"` vs. `import { courses } from "..."`.
+- **Fix**: Check `import { courses } from "../src/db/schema/courses.schema"` vs. `import { courses } from "..."`.
 
 ### 3. Results do not include the expected course
 - **Possible Issue**: The wildcard prefix/suffix usage. If `courseName` is stored with extra whitespace or trimming, `%toMatch%` may fail.

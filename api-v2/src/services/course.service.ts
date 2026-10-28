@@ -1,9 +1,9 @@
 import { db } from "../db/index.js";
 import { and, asc, isNotNull, ne, eq, like } from "drizzle-orm";
 
-import { courses } from "../db/schema/courses.js";
-import { courseEnrollments } from "../db/schema/course_enrollments.js";
-import { courseTimeslots } from "../db/schema/course_timeslots.js";
+import { courses } from "../db/schema/courses.schema.js";
+import { courseEnrollments } from "../db/schema/course_enrollments.schema.js";
+import { courseTimeslots } from "../db/schema/course_timeslots.schema.js";
 import { mapToCourseInformationDTO } from "../dtos/course-information.dto.js";
 
 import type { CreateCourse } from "../dtos/course.dto.js";

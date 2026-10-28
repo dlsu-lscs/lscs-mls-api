@@ -1,4 +1,4 @@
-import { courses } from "../db/schema/courses.js";
+import { courses } from "../db/schema/courses.schema.js";
 
 export type Course = typeof courses.$inferSelect;
 export type CreateCourse = typeof courses.$inferInsert;

@@ -1,4 +1,4 @@
-import { courseEnrollments } from "../db/schema/course_enrollments.js";
+import { courseEnrollments } from "../db/schema/course_enrollments.schema.js";
 
 export type CourseEnrollment = typeof courseEnrollments.$inferSelect;
 export type CreateCourseEnrollment = typeof courseEnrollments.$inferInsert;
