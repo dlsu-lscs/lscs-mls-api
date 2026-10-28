@@ -6,7 +6,6 @@ import courseRoutes from "./routes/course.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import selectedCoursesRoutes from "./routes/selected-courses.routes.js";
-import archershubRoutes from "./routes/archershub.routes.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 
 dotenv.config();
@@ -51,7 +50,6 @@ app.register(courseRoutes, { prefix: "/courses" });
 app.register(userRoutes, { prefix: "/users" });
 app.register(authRoutes, { prefix: "/auth" });
 app.register(selectedCoursesRoutes);
-app.register(archershubRoutes);
 
 
 const start = async () => {
