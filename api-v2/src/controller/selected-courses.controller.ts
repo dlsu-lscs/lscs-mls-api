@@ -21,7 +21,6 @@ export async function addSelectedCourse(
       return reply.code(400).send({ message: "Valid courseId is required." });
     }
 
-
     //The verification needed here has become a hook found in routes and as a middleware "requierSelf.ts"
 
     const result = await SelectedCourseService.addSelectedCourse(userId, courseId);
