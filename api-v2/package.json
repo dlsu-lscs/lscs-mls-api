@@ -1,0 +1,39 @@
+{
+  "name": "api-v2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "tsx testScripts/run-user-tests.ts && tsx testScripts/run-course-tests.ts && tsx testScripts/run-auth-tests.ts && tsx testScripts/run-selected-courses-tests.ts && tsx testScripts/archershub.controller.test.ts",
+    "test:user": "tsx testScripts/run-user-tests.ts",
+    "test:course": "tsx testScripts/run-course-tests.ts",
+    "test:auth": "tsx testScripts/run-auth-tests.ts",
+    "test:selected-courses": "tsx testScripts/run-selected-courses-tests.ts",
+    "test:archershub": "tsx testScripts/archershub.controller.test.ts",
+    "test:user:service": "tsx testScripts/user.service.test.ts",
+    "test:user:controller": "tsx testScripts/user.controller.test.ts",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fastify/cors": "^11.3.1",
+    "dotenv": "^18.0.7",
+    "drizzle-orm": "^0.45.4",
+    "fastify": "^5.12.5",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.23.1",
+    "ph": "^0.1.10"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
+    "drizzle-kit": "^0.31.11",
+    "tsx": "^4.23.15"
+  }
+}
