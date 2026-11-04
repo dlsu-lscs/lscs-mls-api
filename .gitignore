@@ -5,7 +5,10 @@
 /api-v2/node_modules
 /api-v2/dist
 !/api-v2/.env.example
-
+#Dependencies legacy-v2
+/legacy-v1/node_modules
+/legacy-v1/dist
+!/legacy-v1/.env.example
 
 # Env
 .env
