@@ -1,3 +1,5 @@
+export interface DatabaseRow { sid: number; course_id: number; user_id: number }
+
 export interface SelectedCourse {
     id: number,
     courseId: number,
@@ -9,7 +11,7 @@ export interface CreateSelectedCourse {
     userId: number
 }
 
-export function mapToSelectedCourseDTO(dbRow: any): SelectedCourse | null {
+export function mapToSelectedCourseDTO(dbRow: DatabaseRow | null | undefined): SelectedCourse | null {
     if (!dbRow) {
         return null;
     }

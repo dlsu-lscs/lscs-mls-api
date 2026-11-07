@@ -20,7 +20,7 @@ export async function otpFetch(): Promise<string | undefined> {
 
     await client.connect();
 
-    let lock = await client.getMailboxLock('INBOX');
+    const lock = await client.getMailboxLock('INBOX');
 
     try {
         if (!client.mailbox) {
@@ -31,13 +31,13 @@ export async function otpFetch(): Promise<string | undefined> {
             throw new Error("OTP Error: No messages in mailbox");            
         }
 
-        let range = Math.max(1, client.mailbox.exists - 9) + ':*'
-        let messages = (await client.fetchAll(range, { 
+        const range = Math.max(1, client.mailbox.exists - 9) + ':*'
+        const messages = (await client.fetchAll(range, {
             envelope: true, 
             source: true
         })).reverse();
 
-        for (let message of messages) {
+        for (const message of messages) {
             if (!message || !message.envelope || !message.envelope.from) {
                 continue;
             }
@@ -47,7 +47,7 @@ export async function otpFetch(): Promise<string | undefined> {
                 break;
             }
         }
-    } catch (error: any) {
+    } catch {
         return;
     } finally {
         lock.release();
@@ -64,7 +64,7 @@ export async function otpFetch(): Promise<string | undefined> {
         throw new Error("OTP Error: Recent OTP not found");
     }
 
-    let otp = otpString[0].replace("<strong>", "").replace("</strong>", "");
+    const otp = otpString[0].replace("<strong>", "").replace("</strong>", "");
 
     return otp;
 }

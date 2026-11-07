@@ -1,3 +1,4 @@
+import type { Dropdowns, CourseOption } from './archershub.types.js';
 import fs from 'fs';
 import axios from 'axios';
 
@@ -8,8 +9,8 @@ function getSessionId(): string {
     const raw = fs.readFileSync('./ah-cookies.json').toString().trim();
     if (!raw) throw new Error('No cookies found.');
 
-    const cookies = JSON.parse(raw);
-    const session = cookies.find((c: any) => c.name === '__Secure-SID');
+    const cookies: { name: string; value: string }[] = JSON.parse(raw);
+    const session = cookies.find((c) => c.name === '__Secure-SID');
     if (!session) throw new Error('Session ID not found.');
     return session.value;
 }
@@ -22,17 +23,17 @@ function getHeaders(sessionId: string) {
     };
 }
 
-export async function fetchDropdowns(): Promise<any> {
+export async function fetchDropdowns(): Promise<Dropdowns> {
     const sessionId = getSessionId();
-    const { data } = await axios.post(`${BASE_URL}/GetAllDropDownList`, {}, {
+    const { data } = await axios.post<Dropdowns>(`${BASE_URL}/GetAllDropDownList`, {}, {
         headers: getHeaders(sessionId),
     });
     return data;
 }
 
-export async function fetchCourseDropdown(campusNo: string | number, academicSessionId: string | number): Promise<any[]> {
+export async function fetchCourseDropdown(campusNo: string | number, academicSessionId: string | number): Promise<CourseOption[]> {
     const sessionId = getSessionId();
-    const { data } = await axios.post(`${BASE_URL}/GetCourseList/`, {
+    const { data } = await axios.post<{ CourseDrp?: CourseOption[] }>(`${BASE_URL}/GetCourseList/`, {
         Campusno: campusNo,
         AcademicSession: academicSessionId,
     }, {

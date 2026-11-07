@@ -1,3 +1,5 @@
+export interface DatabaseRow { tid: number; day: string; time: string; room?: string; instructor?: string; course_id: number }
+
 export interface CourseTimeslot {
     id: number,
     day: string,
@@ -21,7 +23,7 @@ export interface UpdateCourseTimeslot {
     instructor?: string
 }
 
-export function mapToCourseTimeslotDTO(dbRow: any): CourseTimeslot | null {
+export function mapToCourseTimeslotDTO(dbRow: DatabaseRow | null | undefined): CourseTimeslot | null {
     if (!dbRow) {
         return null;
     }
