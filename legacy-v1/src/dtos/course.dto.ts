@@ -1,3 +1,5 @@
+export interface DatabaseRow { cid: number; course_name: string; section: string; remarks?: string; modality?: string; term?: string; campus?: string }
+
 export interface Course {
     id: number,
     courseName: string,
@@ -27,7 +29,7 @@ export interface UpdateCourse {
     campus?: string
 }
 
-export function mapToCourseDTO(dbRow: any): Course | null {
+export function mapToCourseDTO(dbRow: DatabaseRow | null | undefined): Course | null {
     if (!dbRow) {
         return null;
     }

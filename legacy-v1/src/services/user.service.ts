@@ -1,3 +1,4 @@
+import type { DatabaseRow } from '../dtos/user.dto.js';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import pool from 'config/db.js';
 import { User, CreateUser, UpdateUser, mapToUserDTO } from 'dtos/user.dto.js';
@@ -32,13 +33,13 @@ export async function createUser(data: CreateUser): Promise<User | null> {
 }
 
 export async function getAllUsers(): Promise<User[]> {
-    const [rows] = await pool.query<RowDataPacket[]>(`SELECT * FROM users`);
+    const [rows] = await pool.query<(RowDataPacket & DatabaseRow)[]>(`SELECT * FROM users`);
     const users = rows.map(row => mapToUserDTO(row))
     return users as User[];
 }
 
 export async function getUserById(id: number): Promise<User | null> {
-    const [rows] = await pool.query<RowDataPacket[]>(
+    const [rows] = await pool.query<(RowDataPacket & DatabaseRow)[]>(
         `SELECT * FROM users
         WHERE uid = ?`, 
         [id]
@@ -48,7 +49,7 @@ export async function getUserById(id: number): Promise<User | null> {
 }
 
 export async function getUserByUserId(userId: string): Promise<User | null> {
-    const [rows] = await pool.query<RowDataPacket[]>(
+    const [rows] = await pool.query<(RowDataPacket & DatabaseRow)[]>(
         `SELECT * FROM users
         WHERE user_id = ?`, 
         [userId]

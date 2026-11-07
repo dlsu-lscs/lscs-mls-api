@@ -8,8 +8,8 @@ export const handleAuthentication = async function (req: Request,  res: Response
     try {
         const result = await AuthService.googleAuth2(accessToken);
         res.status(200).json(result);
-    } catch (error: any) {
-        if (error.message.includes("Error on authentication")) {
+    } catch (error) {
+        if (error instanceof Error && error.message.includes("Error on authentication")) {
             res.status(403).json({ message: error.message });
         } else {
             res.status(500).json({ message: "Internal server error." });
@@ -38,8 +38,8 @@ export const handleCallback = async function (req: Request, res: Response) {
         const result = await AuthService.googleAuth2(id_token);
         
         res.status(200).json({ token: result });
-    } catch (error: any) {
-        if (error.message.includes("Error on authentication")) {
+    } catch (error) {
+        if (error instanceof Error && error.message.includes("Error on authentication")) {
             res.status(403).json({ message: error.message });
         } else {
             res.status(500).json({ message: "Internal server error." });

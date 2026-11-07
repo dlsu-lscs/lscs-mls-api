@@ -1,12 +1,13 @@
+import type { Cookie } from 'puppeteer';
 import fs from 'fs';
 import { otpFetch } from './otp.js';
 import vanillaPuppeteer from 'puppeteer';
 import { addExtra } from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import { createWorker } from 'tesseract.js';
 import { connect } from 'puppeteer-real-browser';
 
-const puppeteer = addExtra(vanillaPuppeteer as any);
+// puppeteer-extra still declares the removed createBrowserFetcher API.
+const puppeteer = addExtra(vanillaPuppeteer as unknown as Parameters<typeof addExtra>[0]);
 
 puppeteer.use(StealthPlugin());
 
@@ -39,8 +40,8 @@ export async function isValidSession(): Promise<boolean> {
     return false;
   }
 
-  const cookies = JSON.parse(cookiesString);
-  if (!cookies.find((item: any) => item.name === "__Secure-SID")) {
+  const cookies: Cookie[] = JSON.parse(cookiesString);
+  if (!cookies.find((item) => item.name === "__Secure-SID")) {
     console.log("Session ID not found. Running login.");
     return false;
   }
@@ -65,7 +66,7 @@ export async function isValidSession(): Promise<boolean> {
     await page.waitForSelector('#SPInsName', { timeout: 10000 });
     console.log('Session is valid.');
     return true;
-  } catch (e) {
+  } catch {
     console.error("Cookies have expired. Running login.");
     return false;
   } finally {
@@ -85,21 +86,25 @@ export async function login() {
   // the moment a human solves it — this only *observes* the callback, it doesn't
   // touch how the challenge itself is solved.
   await page.evaluateOnNewDocument(() => {
-    (window as any).__turnstileSolved = false;
+    const turnstileWindow = window as Window & {
+      __turnstileSolved?: boolean;
+      __realTurnstileCallback?: (token: string) => void;
+    };
+    turnstileWindow.__turnstileSolved = false;
     const originalCallbackName = 'onCloudflareTurnstileSuccess';
 
     // Wrap the site's function once it's defined
     Object.defineProperty(window, originalCallbackName, {
       configurable: true,
-      set(fn) {
-        (window as any).__realTurnstileCallback = fn;
+      set(fn: (token: string) => void) {
+        turnstileWindow.__realTurnstileCallback = fn;
       },
       get() {
         return (token: string) => {
-          (window as any).__turnstileSolved = true;
+          turnstileWindow.__turnstileSolved = true;
           console.log('[page] Turnstile solved, token received');
-          if ((window as any).__realTurnstileCallback) {
-            (window as any).__realTurnstileCallback(token);
+          if (turnstileWindow.__realTurnstileCallback) {
+            turnstileWindow.__realTurnstileCallback(token);
           }
         };
       }
@@ -155,7 +160,7 @@ export async function login() {
     fs.writeFileSync('./ah-cookies.json', JSON.stringify(cookies, null, 2));
 
     console.log("Cookies saved to ah-cookies.json.");
-  } catch (e: any) {
+  } catch (e) {
     throw e;
   } finally {
     await browser.close();

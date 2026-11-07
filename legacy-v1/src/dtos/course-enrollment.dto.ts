@@ -1,3 +1,5 @@
+export interface DatabaseRow { eid: number; enroll_cap?: number; enrolled?: number; course_id: number }
+
 export interface CourseEnrollment {
     id: number,
     enrollCap?: number,
@@ -15,7 +17,7 @@ export interface UpdateCourseEnrollment {
     enrolled?: number,
 }
 
-export function mapToCourseEnrollmentDTO(dbRow: any): CourseEnrollment | null {
+export function mapToCourseEnrollmentDTO(dbRow: DatabaseRow | null | undefined): CourseEnrollment | null {
     if (!dbRow) {
         return null;
     }

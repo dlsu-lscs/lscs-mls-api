@@ -15,9 +15,9 @@ export async function fetchCourses(req: Request, res: Response) {
 
         await CourseService.fetchCourses(campus, part, term, course);
         return res.status(200).json({ message: 'Courses fetched successfully.' });
-    } catch (err: any) {
+    } catch (err) {
         console.error('fetchCourses error:', err);
-        if (["Parsing error", "OTP", "Fetch", "Login"].includes(err.message)) {
+        if (err instanceof Error && ["Parsing error", "OTP", "Fetch", "Login"].includes(err.message)) {
             res.status(400).json({ message: err });
         } else {
             res.status(500).json({ message: 'Internal server error.', err });
@@ -38,7 +38,7 @@ export async function getCourseById(req: Request, res: Response) {
             return res.status(404).json({ message: 'Course not found.' });
         }
         res.status(200).json(course);
-    } catch (err) {
+    } catch {
         res.status(500).json({ message: 'Internal server error.' });
     }
 }
@@ -57,7 +57,7 @@ export async function getAllCoursesByCourseName(req: Request, res: Response) {
             return res.status(404).json({ message: 'Course/s not found.' });
         }
         res.status(200).json(course);
-    } catch (err) {
+    } catch {
         res.status(500).json({ message: 'Internal server error.' });
     }
 }

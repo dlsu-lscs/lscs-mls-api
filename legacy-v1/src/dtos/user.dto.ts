@@ -1,3 +1,5 @@
+export interface DatabaseRow { uid: number; email?: string; given_name?: string; family_name?: string; user_id: string; picture_url?: string }
+
 export interface User {
     id: number,
     email?: string,
@@ -21,7 +23,7 @@ export interface UpdateUser {
     pictureUrl?: string
 }
 
-export function mapToUserDTO(dbRow: any): User | null {
+export function mapToUserDTO(dbRow: DatabaseRow | null | undefined): User | null {
     if (!dbRow) {
         return null;
     }

@@ -49,7 +49,7 @@ export async function createCourse(
   );
 
   timeslotData.forEach(async (curr: CreateCourseTimeslot) => {
-    let {
+    const {
       day,
       time,
       room,
@@ -121,7 +121,7 @@ export async function updateCourse(
   const existingMap = new Map(existingRows.map(row => [`${row.day}|${row.time}`, row]));
   const incomingMap = new Map(newTimeslotData.map(ts => [`${ts.day}|${ts.time}`, ts]));
 
-  const queries: Promise<any>[] = [];
+  const queries: Promise<unknown>[] = [];
 
   for (const [key, incoming] of incomingMap.entries()) {
     if (existingMap.has(key)) {
@@ -161,7 +161,7 @@ export async function fetchCourses(
     if (loginAttempts++ >= 3) throw new Error('Login');
     try {
       await login();
-    } catch (e: any) {
+    } catch (e) {
       console.error('Login attempt failed:', e);
       throw new Error('Login');
     }
@@ -178,9 +178,9 @@ export async function fetchCourses(
 
   console.log(`Courses: ${courses.length} | Timeslots: ${timeslots.length} | Enrollments: ${enrollments.length}`)
 
-  const uniqueCourseNames = Array.from(new Set(courses.map((c: any) => c['courseName'])));
+  const uniqueCourseNames = Array.from(new Set(courses.map((c) => c['courseName'])));
 
-  let existingCourses: CourseInformation[] = [];
+  const existingCourses: CourseInformation[] = [];
   for (const name of uniqueCourseNames as string[]) {
     const fetchedCourses = await getAllCoursesByCourseName(name);
     if (fetchedCourses) {
@@ -192,7 +192,7 @@ export async function fetchCourses(
   const newlyCreatedTracker = new Set<string>();
 
   // Main iteration for adding/updating courses
-  const updatePromises = courses.map(async (curr: any) => {
+  const updatePromises = courses.map(async (curr) => {
     const courseName = curr['courseName'];
     const section = curr['section'];
     const classKey = `${courseName}|${section}`;
@@ -203,8 +203,9 @@ export async function fetchCourses(
       c['courseName'] === courseName && c['section'] === section
     );
 
-    const currentEnrollment = enrollments.find((e: any) => e['courseId'] === curr['courseId']);
-    const currentTimeslots = timeslots.filter((t: any) => t['courseId'] === curr['courseId']);
+    const currentEnrollment = enrollments.find((e) => e['courseId'] === curr['courseId']);
+    if (!currentEnrollment) throw new Error('Missing enrollment for scraped course.');
+    const currentTimeslots = timeslots.filter((t) => t['courseId'] === curr['courseId']);
 
     if (existingSimilarCourse) {
       await updateCourse(
@@ -230,7 +231,7 @@ export async function fetchCourses(
   await Promise.all(updatePromises);
 
   // Filters out courses that were not processed (i.e., removed courses)
-  const coursesToDelete = existingCourses.filter((c: any) =>
+  const coursesToDelete = existingCourses.filter((c) =>
     !processedClasses.has(`${c['courseName']}|${c['section']}`)
   );
 
@@ -268,15 +269,15 @@ export async function getAllCoursesByCourseName(name: string): Promise<CourseInf
   return courses;
 }
 
-export async function getInstructorsByCourseName(name: string): Promise<any[]> {
-  const [rows] = await pool.query<RowDataPacket[]>(
+export async function getInstructorsByCourseName(name: string): Promise<{ instructor: string | null }[]> {
+  const [rows] = await pool.query<(RowDataPacket & { instructor: string | null })[]>(
     `SELECT DISTINCT instructor FROM course_timeslots ct
         JOIN courses c ON ct.course_id = c.cid
         WHERE course_name LIKE ?`,
     [`%${name}%`]
   );
 
-  return rows as any[];
+  return rows;
 }
 
 export async function deleteCourse(id: number): Promise<boolean> {

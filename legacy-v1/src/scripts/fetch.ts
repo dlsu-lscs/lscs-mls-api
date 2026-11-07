@@ -1,10 +1,13 @@
+import type { Cookie } from 'puppeteer';
+import type { ScrapedClasses } from './archershub.types.js';
 import fs from 'fs';
 import vanillaPuppeteer from 'puppeteer';
 import { addExtra } from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { spawnSync } from 'child_process';
 
-const puppeteer = addExtra(vanillaPuppeteer as any);
+// puppeteer-extra still declares the removed createBrowserFetcher API.
+const puppeteer = addExtra(vanillaPuppeteer as unknown as Parameters<typeof addExtra>[0]);
 
 puppeteer.use(StealthPlugin());
 
@@ -26,9 +29,7 @@ export async function fetch(
   part: number = 0, 
   term: number = 0,
   course: string = ''
-): Promise<any[] | null> {
-  let cookiesObj;
-
+): Promise<ScrapedClasses | null> {
   const browser = await puppeteer.launch({ 
     headless: true,
     ...BROWSER_CONFIG
@@ -53,17 +54,17 @@ export async function fetch(
     return null;
   }
   
-  const cookies = JSON.parse(cookiesString);
+  const cookies: Cookie[] = JSON.parse(cookiesString);
 
   // Checks if the session id exists
-  if (!cookies.find((item: any) => item.name === "__Secure-SID")) {
+  if (!cookies.find((item) => item.name === "__Secure-SID")) {
     console.log("Session ID not found.");
     await browser.close();
     return null;
   }
   
-  cookiesObj = Object.fromEntries(
-    cookies.map((item: any) => [item.name, item.value])
+  const cookiesObj = Object.fromEntries(
+    cookies.map((item) => [item.name, item.value])
   );
   
   // Injects them into the browser before opening AH
@@ -79,15 +80,15 @@ export async function fetch(
     await page
       .waitForSelector('#SPInsName', { timeout: 10000 })
       .then(() => console.log('Login successful. Fetching courses.'));
-  } catch (e) {
+  } catch {
     console.error("Cookies have expired. Running login.");
     await browser.close();
     return null;
   }
 
-  let sessionId = cookiesObj["__Secure-SID"];
+  const sessionId = cookiesObj["__Secure-SID"];
 
-  const process = spawnSync('python3', ['./src/scripts/scraper.py', sessionId, campus, part, term, course], { 
+  const process = spawnSync('python3', ['./src/scripts/scraper.py', sessionId, String(campus), String(part), String(term), course], {
     encoding: 'utf-8',
     maxBuffer: 1024 * 1024 * 1000
   });
