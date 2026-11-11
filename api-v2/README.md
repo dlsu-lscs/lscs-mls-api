@@ -192,3 +192,31 @@ npx drizzle-kit migrate
 | DTO Audit | ✅ 100% |
 
 See `CHECKLIST.md` for detailed task tracking.
+
+---
+
+## Change Log
+
+### 2026-11-11 — `user_preferences` table (Feature: User Preference)
+
+- **Branch:** `feature/41-UserPreference`
+- **New table:** `user_preferences` — stores a user's onboarding preferences.
+  One row per user, linked to `users` via a foreign key with `ON DELETE CASCADE`
+  (deleting a user also deletes their preferences).
+- **New files:**
+  - `src/db/schema/user_preferences.schema.ts` — Drizzle ORM table definition
+  - `src/db/docu/schema_guide.md` — full database schema guide + change log
+- **Updated files:**
+  - `src/db/PostgreSQL-Translated.sql` — added the `user_preferences` DDL
+- **Fields:** `uid` (PK/FK → users), `preferred_times`, `preferred_f2f`,
+  `preferred_free` (JSONB arrays), `target_units`, `program_code`, `college`,
+  `max_vacant`, `preferred_campus`
+
+### 2026-10-21 — Backend Tech Migration (#57)
+
+- **Branch:** `feature/42-tech-migration`
+- Migrated from Express/MySQL (v1) to Fastify/PostgreSQL with Drizzle ORM.
+- All modules implemented: User, Auth, Course, Selected Courses, ArchersHub.
+- Added error middleware, auth middleware, and full test suites.
+
+See `src/db/docu/schema_guide.md` for the full database schema reference.
