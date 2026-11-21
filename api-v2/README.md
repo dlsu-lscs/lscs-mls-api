@@ -9,6 +9,7 @@ Migration from Express/MySQL (v1) to Fastify/PostgreSQL with Drizzle ORM.
 ```bash
 cd api-v2
 npm install
+cp .env.example .env   # then fill in the values
 npm run dev        # Hot-reload development server
 npm test           # Run all test suites
 npm run build      # TypeScript compilation
@@ -19,15 +20,26 @@ npm start          # Production server
 
 ## Environment Variables
 
+Copy `.env.example` to `.env` in `api-v2/` and fill it in. `.env` is git-ignored: never commit real credentials.
+
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `PORT` | Server port | `3000` |
-| `HOST` | Server host | `localhost` |
-| `DB_URL` | PostgreSQL connection string | `postgresql://user@localhost:5432/mls_api_v2` |
-| `JWT_SECRET` | JWT signing secret | `your-secret-key` |
+| `PORT` | Server port (default `3000`) | `3000` |
+| `HOST` | Server host (default `localhost`; use `0.0.0.0` in a container) | `localhost` |
+| `CORS_ORIGINS` | Browser origins allowed to call the API, comma-separated (default `http://localhost:3001`) | `https://app.example.com,http://localhost:3001` |
+| `DB_URL` | PostgreSQL connection string. **Required**: the server doesn't start without it | `postgresql://user@localhost:5432/mls_api_v2` |
+| `JWT_SECRET` | JWT signing secret. Required for sign-in | `your-secret-key` |
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID | — |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | — |
 | `GOOGLE_REDIRECT_URI` | OAuth redirect URI | `http://localhost:3000/auth/google/callback` |
+| `AH_USERNAME` | ArchersHub account for the course scraper (`POST /courses/fetch` only) | — |
+| `AH_PASSWORD` | Password for `AH_USERNAME` | — |
+| `AH_GMAIL_ADDRESS` | Gmail account that receives the ArchersHub OTP email | — |
+| `AH_GMAIL_PASSWORD` | Gmail app password for `AH_GMAIL_ADDRESS` (read over IMAP) | — |
+
+### CORS
+
+`CORS_ORIGINS` lists the exact origins browsers may call the API from, as scheme, host and optional port (`https://app.example.com`, `http://localhost:3001`). Entries are normalized, so `https://App.Example.com/` matches `https://app.example.com`. A `*`, a path, a query string or credentials in an entry stop the server at startup with an error naming `CORS_ORIGINS`, rather than silently blocking the web app after a deploy.
 
 ---
 
