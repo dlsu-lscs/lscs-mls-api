@@ -4,16 +4,17 @@
 #Dependencies  API-v2
 /api-v2/node_modules
 /api-v2/dist
-!/api-v2/.env.example
 #Dependencies legacy-v2
 /legacy-v1/node_modules
 /legacy-v1/dist
-!/legacy-v1/.env.example
 
 # Env
+# The example files must come after `.env.*`: in .gitignore the last matching rule wins.
 .env
 .env.*
 !/.env.example
+!/api-v2/.env.example
+!/legacy-v1/.env.example
 
 # Logs
 logs
