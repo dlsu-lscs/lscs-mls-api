@@ -5,7 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "tsx testScripts/run-user-tests.ts && tsx testScripts/run-course-tests.ts && tsx testScripts/run-auth-tests.ts && tsx testScripts/run-selected-courses-tests.ts && tsx testScripts/archershub.controller.test.ts",
+    "test": "tsx --test testScripts/cors.config.test.ts && tsx testScripts/run-user-tests.ts && tsx testScripts/run-course-tests.ts && tsx testScripts/run-auth-tests.ts && tsx testScripts/run-selected-courses-tests.ts && tsx testScripts/archershub.controller.test.ts",
+    "test:cors": "tsx --test testScripts/cors.config.test.ts",
     "test:user": "tsx testScripts/run-user-tests.ts",
     "test:course": "tsx testScripts/run-course-tests.ts",
     "test:auth": "tsx testScripts/run-auth-tests.ts",

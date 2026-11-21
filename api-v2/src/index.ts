@@ -7,17 +7,21 @@ import userRoutes from "./routes/user.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import selectedCoursesRoutes from "./routes/selected-courses.routes.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
+import { parseAllowedOrigins } from './config/cors.js';
 
 dotenv.config();
 const port = Number(process.env.PORT) || 3000;
 const host = process.env.HOST || 'localhost';
+// Parsed at startup so a misconfigured CORS_ORIGINS stops the server instead of
+// silently blocking the web app.
+const allowedOrigins = parseAllowedOrigins(process.env.CORS_ORIGINS);
 
 const app = Fastify({
   logger: true,
 });
 
 app.register(cors, {
-  origin: 'http://localhost:3001',
+  origin: allowedOrigins,
 });
 
 app.setErrorHandler(errorMiddleware);
